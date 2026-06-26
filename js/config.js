@@ -11,4 +11,15 @@
  */
 export const config = {
   firebaseUrl: "https://besedko-c9763-default-rtdb.europe-west1.firebasedatabase.app",
+
+  // Firebase app config
+  firebaseApp: {
+    apiKey:            "AIzaSyBQ194Pjv-uoI8aEt4saITpKwzf_Tm5_Mc",
+    authDomain:        "besedko-c9763.firebaseapp.com",
+    databaseURL:       "https://besedko-c9763-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId:         "besedko-c9763",
+    storageBucket:     "besedko-c9763.firebasestorage.app",
+    messagingSenderId: "362804660533",
+    appId:             "1:362804660533:web:c7fc7569c1c1c5b633247c",
+  },
 };

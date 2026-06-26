@@ -60,12 +60,35 @@ export class UI {
     this.mpJoinCode = document.getElementById("mp-join-code");
     this.mpModalJoinBtn = document.getElementById("mp-modal-join-btn");
 
+    // Auth
+    this.authBtn = document.getElementById("auth-btn");
+    this.authUserChip = document.getElementById("auth-user-chip");
+    this.authAvatar = document.getElementById("auth-avatar");
+    this.authChipName = document.getElementById("auth-chip-name");
+    this.authModal = document.getElementById("auth-modal");
+    this.authViewLogin = document.getElementById("auth-view-login");
+    this.authViewProfile = document.getElementById("auth-view-profile");
+    this.authClose = document.getElementById("auth-close");
+    this.authCloseProfile = document.getElementById("auth-close-profile");
+    this.authGoogleBtn = document.getElementById("auth-google-btn");
+    this.authNameInput = document.getElementById("auth-name-input");
+    this.authEmailInput = document.getElementById("auth-email");
+    this.authPasswordInput = document.getElementById("auth-password");
+    this.authSigninBtn = document.getElementById("auth-signin-btn");
+    this.authRegisterBtn = document.getElementById("auth-register-btn");
+    this.authError = document.getElementById("auth-error");
+    this.authProfileAvatar = document.getElementById("auth-profile-avatar");
+    this.authProfileName = document.getElementById("auth-profile-name");
+    this.authProfileEmail = document.getElementById("auth-profile-email");
+    this.authLogoutBtn = document.getElementById("auth-logout-btn");
+
     // Opponent board
     this.opponentBoardWrapper = document.getElementById("opponent-board-wrapper");
     this.opponentLabel = document.getElementById("opponent-label");
     this.mainElement = document.querySelector("main");
 
     this.hideTimer = null;
+    this._authCallbacks = {};
     this.register();
   }
 
@@ -109,6 +132,22 @@ export class UI {
     this.leaveRoomButton?.addEventListener("click", () => this.leaveMultiplayerRoom());
     this.mpConfirmYes?.addEventListener("click", () => this.game?.multiplayer?.confirmGuest());
     this.mpConfirmNo?.addEventListener("click", () => this.game?.multiplayer?.rejectGuest());
+
+    // Auth
+    this.authBtn?.addEventListener("click", () => this.openAuthModal());
+    this.authUserChip?.addEventListener("click", () => this.openAuthModal());
+    this.authClose?.addEventListener("click", () => this.closeAuthModal());
+    this.authCloseProfile?.addEventListener("click", () => this.closeAuthModal());
+    this.authModal?.addEventListener("click", (e) => {
+      if (e.target === this.authModal) this.closeAuthModal();
+    });
+    this.authGoogleBtn?.addEventListener("click", () => this._authCallbacks.onGoogle?.());
+    this.authSigninBtn?.addEventListener("click", () => this._authCallbacks.onSignin?.());
+    this.authRegisterBtn?.addEventListener("click", () => this._authCallbacks.onRegister?.());
+    this.authLogoutBtn?.addEventListener("click", () => this._authCallbacks.onLogout?.());
+    this.authPasswordInput?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") this._authCallbacks.onSignin?.();
+    });
 
     // Create modal
     this.mpCreateClose?.addEventListener("click", () => this.closeCreateModal());
@@ -187,6 +226,9 @@ export class UI {
     }
     if (this.multiplayerPanel) {
       this.multiplayerPanel.classList.toggle("visible", normalized === "multiplayer");
+    }
+    if (this.mainElement) {
+      this.mainElement.classList.toggle("mp-mode", normalized === "multiplayer");
     }
 
     if (this.game) {
@@ -345,6 +387,87 @@ export class UI {
 
   setOpponentNickname(name) {
     if (this.opponentLabel) this.opponentLabel.textContent = name || "Nasprotnik";
+  }
+
+  // --- Auth modal ---
+
+  registerAuthCallbacks(callbacks) {
+    this._authCallbacks = callbacks;
+  }
+
+  openAuthModal() {
+    this.clearAuthError();
+    this.authModal?.classList.add("visible");
+  }
+
+  closeAuthModal() {
+    this.authModal?.classList.remove("visible");
+    this.clearAuthError();
+  }
+
+  setAuthBusy(busy) {
+    if (this.authGoogleBtn) this.authGoogleBtn.disabled = busy;
+    if (this.authSigninBtn) this.authSigninBtn.disabled = busy;
+    if (this.authRegisterBtn) this.authRegisterBtn.disabled = busy;
+  }
+
+  showAuthError(text) {
+    if (!this.authError) return;
+    this.authError.textContent = text;
+    this.authError.hidden = false;
+  }
+
+  clearAuthError() {
+    if (this.authError) this.authError.hidden = true;
+  }
+
+  /** Call this when auth state changes. user = Firebase user object or null. */
+  setAuthUser(user) {
+    if (user) {
+      // Logged in: show chip, hide login button
+      this.authBtn && (this.authBtn.hidden = true);
+      this.authUserChip && (this.authUserChip.hidden = false);
+
+      // Set chip content
+      const name = user.displayName || user.email?.split("@")[0] || "Uporabnik";
+      if (this.authChipName) this.authChipName.textContent = name.slice(0, 14);
+
+      // Avatar: photo or initial
+      if (this.authAvatar) {
+        if (user.photoURL) {
+          this.authAvatar.innerHTML = `<img src="${user.photoURL}" alt="${name}" referrerpolicy="no-referrer" />`;
+        } else {
+          this.authAvatar.textContent = name[0].toUpperCase();
+        }
+      }
+
+      // Profile view
+      if (this.authViewLogin) this.authViewLogin.hidden = true;
+      if (this.authViewProfile) this.authViewProfile.hidden = false;
+      if (this.authProfileName) this.authProfileName.textContent = name;
+      if (this.authProfileEmail) this.authProfileEmail.textContent = user.email || "";
+      if (this.authProfileAvatar) {
+        if (user.photoURL) {
+          this.authProfileAvatar.innerHTML = `<img src="${user.photoURL}" alt="${name}" referrerpolicy="no-referrer" />`;
+        } else {
+          this.authProfileAvatar.textContent = name[0].toUpperCase();
+        }
+      }
+    } else {
+      // Logged out: show login button, hide chip
+      this.authBtn && (this.authBtn.hidden = false);
+      this.authUserChip && (this.authUserChip.hidden = true);
+      if (this.authViewLogin) this.authViewLogin.hidden = false;
+      if (this.authViewProfile) this.authViewProfile.hidden = true;
+    }
+  }
+
+  getAuthFormValues() {
+    return {
+      name: (this.authNameInput?.value || "").trim(),
+      email: (this.authEmailInput?.value || "").trim(),
+      password: this.authPasswordInput?.value || "",
+    };
   }
 
   // --- Status display ---

@@ -20,6 +20,12 @@
         <button class="icon-button" id="hint-button" aria-label="Namig">💡</button>
         <button class="icon-button" id="new-game-button" aria-label="Nova igra">↺</button>
         <button class="icon-button" id="stats-button" aria-label="Odpri statistiko">📊</button>
+        <!-- Auth: shows login button when logged out, user chip when logged in -->
+        <button class="icon-button auth-header-btn" id="auth-btn" aria-label="Prijava">👤</button>
+        <button class="auth-user-chip" id="auth-user-chip" hidden aria-label="Profil">
+          <span class="auth-avatar" id="auth-avatar" aria-hidden="true"></span>
+          <span class="auth-chip-name" id="auth-chip-name"></span>
+        </button>
       </div>
     </header>
 
@@ -154,6 +160,56 @@
       </div>
     </div>
 
-    <script type="module" src="js/app.js?v=20260626-9"></script>
+    <!-- Auth modal -->
+    <div id="auth-modal" class="stats-modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+      <div class="stats-panel auth-modal-panel">
+        <!-- Logged-out view -->
+        <div id="auth-view-login">
+          <header class="stats-header">
+            <h2 id="auth-modal-title">Prijava</h2>
+            <button id="auth-close" class="close-button" aria-label="Zapri">×</button>
+          </header>
+          <div class="auth-modal-body">
+            <button id="auth-google-btn" class="auth-google-btn" type="button">
+              <span class="auth-google-g">G</span>
+              Prijavi se z Google
+            </button>
+            <div class="auth-divider"><span>ali z e-pošto</span></div>
+            <div class="mp-modal-field">
+              <label class="mp-label" for="auth-name-input">Ime (za registracijo)</label>
+              <input type="text" id="auth-name-input" class="mp-text-input" placeholder="Žiga" maxlength="30" autocomplete="name" />
+            </div>
+            <div class="mp-modal-field">
+              <label class="mp-label" for="auth-email">E-naslov</label>
+              <input type="email" id="auth-email" class="mp-text-input" placeholder="ime@primer.si" autocomplete="email" />
+            </div>
+            <div class="mp-modal-field">
+              <label class="mp-label" for="auth-password">Geslo</label>
+              <input type="password" id="auth-password" class="mp-text-input" placeholder="••••••••" autocomplete="current-password" />
+            </div>
+            <div class="auth-actions">
+              <button id="auth-signin-btn" class="secondary-button mp-modal-confirm-btn" type="button">Prijavi se →</button>
+              <button id="auth-register-btn" class="secondary-button" type="button">Registracija</button>
+            </div>
+            <div id="auth-error" class="auth-error" hidden></div>
+          </div>
+        </div>
+        <!-- Logged-in view -->
+        <div id="auth-view-profile" hidden>
+          <header class="stats-header">
+            <h2 id="auth-modal-title-profile">Profil</h2>
+            <button id="auth-close-profile" class="close-button" aria-label="Zapri">×</button>
+          </header>
+          <div class="auth-profile-body">
+            <div class="auth-profile-avatar" id="auth-profile-avatar"></div>
+            <div class="auth-profile-name" id="auth-profile-name"></div>
+            <div class="auth-profile-email" id="auth-profile-email"></div>
+            <button id="auth-logout-btn" class="secondary-button auth-logout-btn" type="button">Odjavi se</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="js/app.js?v=20260626-10"></script>
   </body>
 </html>

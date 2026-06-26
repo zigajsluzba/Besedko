@@ -33,4 +33,8 @@ export class Storage {
 	getStats() {
 		return this.get("stats", {});
 	}
+
+	setStats(stats) {
+		this.set("stats", stats);
+	}
 }

@@ -1,12 +1,54 @@
-import { Game } from "./game.js?v=20260626-9";
-import { Dictionary } from "./dictionary.js?v=20260626-9";
-import { Storage } from "./storage.js?v=20260626-9";
-import { UI } from "./ui.js?v=20260626-9";
-import { Multiplayer } from "./multiplayer.js?v=20260626-9";
-import { config } from "./config.js?v=20260626-9";
+import { Game } from "./game.js?v=20260626-10";
+import { Dictionary } from "./dictionary.js?v=20260626-10";
+import { Storage } from "./storage.js?v=20260626-10";
+import { UI } from "./ui.js?v=20260626-10";
+import { Multiplayer } from "./multiplayer.js?v=20260626-10";
+import { config } from "./config.js?v=20260626-10";
+import {
+  onAuthChange,
+  signInWithGoogle,
+  signInWithEmail,
+  registerWithEmail,
+  logout,
+  friendlyAuthError,
+} from "./auth.js?v=20260626-10";
 
 window.__besedkoInitStatus = "pending";
 window.__besedkoInitError = null;
+
+// Sync stats between localStorage and Firebase for a logged-in user.
+async function syncStats(user, storage, firebaseUrl) {
+  if (!user || !firebaseUrl) return;
+  const localStats = storage.getStats();
+  try {
+    const res = await fetch(`${firebaseUrl}/users/${user.uid}/stats.json`);
+    const remote = res.ok ? await res.json() : null;
+    const merged = {
+      played: Math.max(localStats.played || 0, remote?.played || 0),
+      wins:   Math.max(localStats.wins   || 0, remote?.wins   || 0),
+    };
+    storage.setStats(merged);
+    await fetch(`${firebaseUrl}/users/${user.uid}/stats.json`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(merged),
+    });
+    return merged;
+  } catch (e) {
+    console.error("[Auth] Stats sync failed:", e);
+  }
+}
+
+async function pushStats(user, storage, firebaseUrl) {
+  if (!user || !firebaseUrl) return;
+  try {
+    await fetch(`${firebaseUrl}/users/${user.uid}/stats.json`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(storage.getStats()),
+    });
+  } catch (e) {}
+}
 
 async function init() {
   try {
@@ -33,6 +75,105 @@ async function init() {
 
     ui.setGame(game);
     ui.setMode(mode);
+
+    // ─── Firebase Auth ───────────────────────────────────────────
+    const authAvailable = config.firebaseApp?.apiKey &&
+      !config.firebaseApp.apiKey.includes("REPLACE_WITH");
+
+    if (authAvailable) {
+      let syncTimer = null;
+      let currentUser = null;
+
+      // Auth state listener
+      onAuthChange(config.firebaseApp, async (user) => {
+        currentUser = user;
+        ui.setAuthUser(user);
+
+        if (syncTimer) { clearInterval(syncTimer); syncTimer = null; }
+
+        if (user) {
+          const merged = await syncStats(user, storage, config.firebaseUrl);
+          if (merged) {
+            game.updateHeaderStats();
+          }
+          // Push stats periodically while session is active
+          syncTimer = setInterval(() => pushStats(user, storage, config.firebaseUrl), 60_000);
+        }
+      });
+
+      // Push stats on page unload
+      window.addEventListener("beforeunload", () => {
+        if (currentUser) pushStats(currentUser, storage, config.firebaseUrl);
+      });
+
+      // Wire auth callbacks into UI
+      ui.registerAuthCallbacks({
+        onGoogle: async () => {
+          ui.setAuthBusy(true);
+          ui.clearAuthError();
+          try {
+            await signInWithGoogle(config.firebaseApp);
+            ui.closeAuthModal();
+          } catch (e) {
+            const msg = friendlyAuthError(e.code);
+            if (msg) ui.showAuthError(msg);
+          } finally {
+            ui.setAuthBusy(false);
+          }
+        },
+
+        onSignin: async () => {
+          const { email, password } = ui.getAuthFormValues();
+          if (!email || !password) {
+            ui.showAuthError("Vnesi e-naslov in geslo.");
+            return;
+          }
+          ui.setAuthBusy(true);
+          ui.clearAuthError();
+          try {
+            await signInWithEmail(config.firebaseApp, email, password);
+            ui.closeAuthModal();
+          } catch (e) {
+            ui.showAuthError(friendlyAuthError(e.code));
+          } finally {
+            ui.setAuthBusy(false);
+          }
+        },
+
+        onRegister: async () => {
+          const { name, email, password } = ui.getAuthFormValues();
+          if (!email || !password) {
+            ui.showAuthError("Vnesi e-naslov in geslo.");
+            return;
+          }
+          if (password.length < 6) {
+            ui.showAuthError("Geslo mora imeti vsaj 6 znakov.");
+            return;
+          }
+          ui.setAuthBusy(true);
+          ui.clearAuthError();
+          try {
+            await registerWithEmail(config.firebaseApp, email, password, name || undefined);
+            ui.closeAuthModal();
+          } catch (e) {
+            ui.showAuthError(friendlyAuthError(e.code));
+          } finally {
+            ui.setAuthBusy(false);
+          }
+        },
+
+        onLogout: async () => {
+          try {
+            await logout(config.firebaseApp);
+            ui.closeAuthModal();
+          } catch (e) {
+            console.error("[Auth] Logout failed:", e);
+          }
+        },
+      });
+    }
+    // ─────────────────────────────────────────────────────────────
+
     window.__besedkoInitStatus = "ready";
   } catch (error) {
     window.__besedkoInitStatus = "failed";
