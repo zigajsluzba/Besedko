@@ -10,5 +10,5 @@
  * 6. Prilepi URL spodaj in commitaj spremembo na GitHub
  */
 export const config = {
-  firebaseUrl: "https://YOUR-PROJECT-default-rtdb.europe-west1.firebasedatabase.app",
+  firebaseUrl: "https://besedko-c9763-default-rtdb.europe-west1.firebasedatabase.app",
 };
