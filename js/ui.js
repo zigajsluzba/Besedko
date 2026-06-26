@@ -1,4 +1,5 @@
-import { Multiplayer } from "./multiplayer.js?v=20260626-7";
+import { Multiplayer } from "./multiplayer.js?v=20260626-8";
+import { config } from "./config.js?v=20260626-8";
 
 export class UI {
   constructor(storage) {
@@ -26,17 +27,26 @@ export class UI {
 
     // Multiplayer panel
     this.multiplayerPanel = document.querySelector(".multiplayer-panel");
-    this.roomCodeElement = document.getElementById("room-code");
     this.multiplayerStatusElement = document.getElementById("multiplayer-status");
+
+    // Pre-room elements
+    this.mpPreroom = document.getElementById("mp-preroom");
     this.createRoomButton = document.getElementById("multiplayer-create");
     this.joinRoomButton = document.getElementById("multiplayer-join");
-    this.leaveRoomButton = document.getElementById("multiplayer-leave");
-
-    // Settings
     this.mpSettings = document.getElementById("mp-settings");
     this.mpTopicContainer = document.getElementById("mp-topic-buttons");
     this.mpLengthButtons = document.querySelectorAll(".mp-length-btn");
     this.mpRowsButtons = document.querySelectorAll(".mp-rows-btn");
+
+    // In-room elements
+    this.mpInroom = document.getElementById("mp-inroom");
+    this.mpRoomCodeDisplay = document.getElementById("mp-room-code-display");
+    this.mpMyName = document.getElementById("mp-my-name");
+    this.leaveRoomButton = document.getElementById("multiplayer-leave");
+    this.mpConfirm = document.getElementById("mp-confirm");
+    this.mpConfirmText = document.getElementById("mp-confirm-text");
+    this.mpConfirmYes = document.getElementById("mp-confirm-yes");
+    this.mpConfirmNo = document.getElementById("mp-confirm-no");
 
     // Opponent board
     this.opponentBoardWrapper = document.getElementById("opponent-board-wrapper");
@@ -75,14 +85,14 @@ export class UI {
     };
     this.newGameButton?.addEventListener("click", startNewGame);
     this.statsNewGameButton?.addEventListener("click", startNewGame);
-    this.hintButton?.addEventListener("click", () => {
-      this.game && this.game.requestHint();
-    });
+    this.hintButton?.addEventListener("click", () => this.game && this.game.requestHint());
     this.modeSingleButton?.addEventListener("click", () => this.setMode("single"));
     this.modeMultiButton?.addEventListener("click", () => this.setMode("multiplayer"));
     this.createRoomButton?.addEventListener("click", () => this.createMultiplayerRoom());
     this.joinRoomButton?.addEventListener("click", () => this.joinMultiplayerRoom());
     this.leaveRoomButton?.addEventListener("click", () => this.leaveMultiplayerRoom());
+    this.mpConfirmYes?.addEventListener("click", () => this.game?.multiplayer?.confirmGuest());
+    this.mpConfirmNo?.addEventListener("click", () => this.game?.multiplayer?.rejectGuest());
 
     // Word length buttons
     this.mpLengthButtons.forEach((btn) => {
@@ -146,12 +156,14 @@ export class UI {
       this.game.mode = normalized;
       if (normalized === "multiplayer") {
         if (!this.game.multiplayer) {
-          this.game.multiplayer = new Multiplayer({ game: this.game, ui: this });
+          this.game.multiplayer = new Multiplayer({
+            game: this.game, ui: this, firebaseUrl: config.firebaseUrl,
+          });
         }
         if (!this.game.multiplayer.roomId) {
           const restored = this.game.multiplayer.restoreSession();
-          if (!restored) {
-            this.setMultiplayerStatus("Ustvari sobo ali se pridruži z drugo kartico.");
+          if (!restored && this.game.multiplayer.available) {
+            this.setMultiplayerStatus("Ustvari sobo ali se pridruži z drugo napravo.");
           }
         }
       }
@@ -167,10 +179,12 @@ export class UI {
 
   // --- Multiplayer room actions ---
 
-  createMultiplayerRoom() {
+  async createMultiplayerRoom() {
     if (!this.game) return;
     if (!this.game.multiplayer) {
-      this.game.multiplayer = new Multiplayer({ game: this.game, ui: this });
+      this.game.multiplayer = new Multiplayer({
+        game: this.game, ui: this, firebaseUrl: config.firebaseUrl,
+      });
     }
     const nickname = this.promptForNickname();
     if (!nickname) return;
@@ -190,24 +204,22 @@ export class UI {
     this.game.rows = rows;
     this.game.restart([answer]);
 
-    const roomCode = this.game.multiplayer.createRoom();
-    if (roomCode) {
-      this.showMessage(`Soba ustvarjena! Koda: ${roomCode}`, "info", 3200);
-    }
+    await this.game.multiplayer.createRoom();
   }
 
-  joinMultiplayerRoom() {
+  async joinMultiplayerRoom() {
     if (!this.game) return;
     if (!this.game.multiplayer) {
-      this.game.multiplayer = new Multiplayer({ game: this.game, ui: this });
+      this.game.multiplayer = new Multiplayer({
+        game: this.game, ui: this, firebaseUrl: config.firebaseUrl,
+      });
     }
     const nickname = this.promptForNickname();
     if (!nickname) return;
     this.game.multiplayer.setNickname(nickname);
     const roomCode = window.prompt("Vnesi kodo sobe:");
     if (!roomCode) return;
-    this.game.multiplayer.joinRoom(roomCode);
-    this.showMessage(`Pridružujem se sobi ${roomCode.toUpperCase()}...`, "info", 2400);
+    await this.game.multiplayer.joinRoom(roomCode);
   }
 
   leaveMultiplayerRoom() {
@@ -216,7 +228,6 @@ export class UI {
       return;
     }
     this.game.multiplayer.leaveRoom();
-    this.showMessage("Zapustil/a si sobo.", "info", 2400);
   }
 
   promptForNickname() {
@@ -227,6 +238,32 @@ export class UI {
     if (!nickname) return null;
     window.localStorage.setItem("besedko-nickname", nickname);
     return nickname;
+  }
+
+  // --- Room state display ---
+
+  /** Toggle between pre-room and in-room views. */
+  setRoomCode(code) {
+    const inRoom = Boolean(code);
+    if (this.mpPreroom) this.mpPreroom.hidden = inRoom;
+    if (this.mpInroom) this.mpInroom.hidden = !inRoom;
+    if (this.mpRoomCodeDisplay) this.mpRoomCodeDisplay.textContent = code || "–";
+    if (!inRoom) this.hideConfirmDialog();
+  }
+
+  setPlayerName(name) {
+    if (this.mpMyName) this.mpMyName.textContent = name || "–";
+  }
+
+  showConfirmDialog(nickname) {
+    if (this.mpConfirmText) {
+      this.mpConfirmText.textContent = `${nickname} želi vstopiti v sobo.`;
+    }
+    if (this.mpConfirm) this.mpConfirm.hidden = false;
+  }
+
+  hideConfirmDialog() {
+    if (this.mpConfirm) this.mpConfirm.hidden = true;
   }
 
   // --- Opponent board ---
@@ -247,13 +284,6 @@ export class UI {
   }
 
   // --- Status display ---
-
-  setRoomCode(code) {
-    if (this.roomCodeElement) {
-      this.roomCodeElement.textContent = code ? `Soba: ${code}` : "Soba: -";
-    }
-    if (this.mpSettings) this.mpSettings.hidden = Boolean(code);
-  }
 
   setMultiplayerStatus(text) {
     if (!this.multiplayerStatusElement) return;

@@ -24,47 +24,70 @@
     </header>
 
     <main>
-      <!-- Multiplayer controls (hidden in single mode) -->
+      <!-- Multiplayer panel (hidden in single mode) -->
       <div class="multiplayer-panel">
-        <div class="mp-actions">
-          <button id="multiplayer-create" class="secondary-button" type="button">Ustvari sobo</button>
-          <button id="multiplayer-join" class="secondary-button" type="button">Pridruži se</button>
-          <button id="multiplayer-leave" class="secondary-button" type="button">Zapusti</button>
-          <div id="room-code" class="room-code">Soba: -</div>
-        </div>
 
-        <!-- Topic + word length settings (host picks before creating room; hidden once room is active) -->
-        <div class="mp-settings" id="mp-settings">
-          <div class="mp-setting-group">
-            <span class="mp-label">Tema</span>
-            <div class="mp-topic-buttons" id="mp-topic-buttons" role="group" aria-label="Tema"></div>
+        <!-- PRE-ROOM: shown when NOT in a room -->
+        <div id="mp-preroom">
+          <div class="mp-actions">
+            <button id="multiplayer-create" class="secondary-button" type="button">Ustvari sobo</button>
+            <button id="multiplayer-join" class="secondary-button" type="button">Pridruži se</button>
           </div>
-          <div class="mp-setting-group">
-            <span class="mp-label">Dolžina</span>
-            <div class="mp-length-buttons" role="group" aria-label="Dolžina besede">
-              <button class="mp-length-btn" data-length="4" type="button">4</button>
-              <button class="mp-length-btn active" data-length="5" type="button">5</button>
-              <button class="mp-length-btn" data-length="6" type="button">6</button>
+          <div class="mp-settings" id="mp-settings">
+            <div class="mp-setting-group">
+              <span class="mp-label">Tema</span>
+              <div class="mp-topic-buttons" id="mp-topic-buttons" role="group" aria-label="Tema"></div>
+            </div>
+            <div class="mp-setting-group">
+              <span class="mp-label">Dolžina</span>
+              <div class="mp-length-buttons" role="group" aria-label="Dolžina besede">
+                <button class="mp-length-btn" data-length="4" type="button">4</button>
+                <button class="mp-length-btn active" data-length="5" type="button">5</button>
+                <button class="mp-length-btn" data-length="6" type="button">6</button>
+              </div>
+            </div>
+            <div class="mp-setting-group">
+              <span class="mp-label">Poskusi</span>
+              <div class="mp-length-buttons" role="group" aria-label="Število poskusov">
+                <button class="mp-rows-btn" data-rows="3" type="button">3</button>
+                <button class="mp-rows-btn" data-rows="4" type="button">4</button>
+                <button class="mp-rows-btn" data-rows="5" type="button">5</button>
+                <button class="mp-rows-btn active" data-rows="6" type="button">6</button>
+                <button class="mp-rows-btn" data-rows="7" type="button">7</button>
+                <button class="mp-rows-btn" data-rows="8" type="button">8</button>
+              </div>
             </div>
           </div>
-          <div class="mp-setting-group">
-            <span class="mp-label">Poskusi</span>
-            <div class="mp-length-buttons" role="group" aria-label="Število poskusov">
-              <button class="mp-rows-btn" data-rows="3" type="button">3</button>
-              <button class="mp-rows-btn" data-rows="4" type="button">4</button>
-              <button class="mp-rows-btn" data-rows="5" type="button">5</button>
-              <button class="mp-rows-btn active" data-rows="6" type="button">6</button>
-              <button class="mp-rows-btn" data-rows="7" type="button">7</button>
-              <button class="mp-rows-btn" data-rows="8" type="button">8</button>
+        </div>
+
+        <!-- IN-ROOM: shown when actively in a room -->
+        <div id="mp-inroom" hidden>
+          <div class="mp-room-row">
+            <div class="mp-room-cell">
+              <span class="mp-label">Soba</span>
+              <strong id="mp-room-code-display" class="mp-room-value">–</strong>
+            </div>
+            <div class="mp-room-cell">
+              <span class="mp-label">Vzdevek</span>
+              <strong id="mp-my-name" class="mp-room-value">–</strong>
+            </div>
+            <button id="multiplayer-leave" class="secondary-button mp-leave-btn" type="button">Zapusti ✕</button>
+          </div>
+          <!-- Host confirmation: shown when a guest requests to join -->
+          <div id="mp-confirm" class="mp-confirm" hidden>
+            <span id="mp-confirm-text" class="mp-confirm-text">Nekdo želi vstopiti.</span>
+            <div class="mp-confirm-btns">
+              <button id="mp-confirm-yes" class="secondary-button mp-btn-yes" type="button">✓ Sprejmi</button>
+              <button id="mp-confirm-no" class="secondary-button mp-btn-no" type="button">✕ Zavrni</button>
             </div>
           </div>
         </div>
 
         <div id="multiplayer-status" class="multiplayer-status" aria-live="polite">Izberi način igre.</div>
-        <p class="mp-hint">Oba zavihka morata biti v <strong>istem brskalniku</strong> (npr. oba Chrome ali oba Edge).</p>
+        <p class="mp-hint">Deluje med napravami (računalnik ↔ telefon) prek Firebase.</p>
       </div>
 
-      <!-- Game boards: local + opponent side by side -->
+      <!-- Game boards: my board + opponent board side by side in multiplayer -->
       <div class="boards-container" id="boards-container">
         <div class="board-wrapper" id="my-board-wrapper">
           <div class="board-label" id="my-board-label">Jaz</div>
@@ -95,6 +118,6 @@
       </div>
     </div>
 
-    <script type="module" src="js/app.js?v=20260626-7"></script>
+    <script type="module" src="js/app.js?v=20260626-8"></script>
   </body>
 </html>

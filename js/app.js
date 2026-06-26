@@ -1,8 +1,9 @@
-import { Game } from "./game.js?v=20260626-7";
-import { Dictionary } from "./dictionary.js?v=20260626-7";
-import { Storage } from "./storage.js?v=20260626-7";
-import { UI } from "./ui.js?v=20260626-7";
-import { Multiplayer } from "./multiplayer.js?v=20260626-7";
+import { Game } from "./game.js?v=20260626-8";
+import { Dictionary } from "./dictionary.js?v=20260626-8";
+import { Storage } from "./storage.js?v=20260626-8";
+import { UI } from "./ui.js?v=20260626-8";
+import { Multiplayer } from "./multiplayer.js?v=20260626-8";
+import { config } from "./config.js?v=20260626-8";
 
 window.__besedkoInitStatus = "pending";
 window.__besedkoInitError = null;
@@ -23,10 +24,10 @@ async function init() {
     const game = new Game(answers, dict, storage, ui, mode);
 
     if (mode === "multiplayer") {
-      game.multiplayer = new Multiplayer({ game, ui });
+      game.multiplayer = new Multiplayer({ game, ui, firebaseUrl: config.firebaseUrl });
       const restored = game.multiplayer.restoreSession();
-      if (!restored) {
-        ui.setMultiplayerStatus("Ustvari sobo ali se pridruži z drugo kartico.");
+      if (!restored && game.multiplayer.available) {
+        ui.setMultiplayerStatus("Ustvari sobo ali se pridruži z drugo napravo.");
       }
     }
 
