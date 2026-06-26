@@ -75,6 +75,8 @@
         <button class="game-mode-btn" data-mode="hard" type="button">Težko 🔥</button>
         <button class="game-mode-btn" data-mode="timeattack" type="button">⏱ Časovni</button>
         <button class="game-mode-btn" data-mode="zen" type="button">Zen 🧘</button>
+        <button class="game-mode-btn" data-mode="riddle" type="button">🎭 Uganka</button>
+        <button class="game-mode-btn" data-mode="random" type="button">🎲 Naključno</button>
       </div>
       <p class="game-mode-desc" id="game-mode-desc"></p>
 
@@ -100,6 +102,21 @@
       <div class="keyboard-actions">
         <button class="hint-btn" id="hint-button" aria-label="Namig">💡 Namig</button>
       </div>
+
+      <!-- Riddle panel (visible only in uganka mode) -->
+      <div id="riddle-panel" class="riddle-panel" hidden>
+        <div id="riddle-clues" class="riddle-clues"></div>
+        <div class="riddle-controls">
+          <button id="riddle-next-clue-btn" class="secondary-button" type="button">Naslednji namig ›</button>
+          <div class="riddle-answer-row">
+            <input id="riddle-input" class="mp-text-input riddle-input" type="text" placeholder="Tvoj odgovor..." autocomplete="off" />
+            <button id="riddle-submit-btn" class="secondary-button" type="button">Preveri</button>
+          </div>
+        </div>
+        <div id="riddle-result" class="riddle-result" hidden></div>
+        <button id="riddle-next-btn" class="secondary-button" type="button" hidden>Naslednja uganka ↺</button>
+      </div>
+
       <div id="message" class="message" aria-live="assertive" role="alert"></div>
     </main>
 
@@ -265,6 +282,6 @@
       </div>
     </div>
 
-    <script type="module" src="js/app.js?v=20260626-19"></script>
+    <script type="module" src="js/app.js?v=20260626-20"></script>
   </body>
 </html>

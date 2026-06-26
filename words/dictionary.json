@@ -36,5 +36,10 @@
   "MEJA", "OSEL", "SLON", "KOZA", "KMET", "JUHA", "ŽITO", "OVES",
   "AJDA", "MAST", "REPA", "FIGE", "BROD", "PRAG", "TRAK", "PRAH",
   "KAVČ", "LOPA", "OVEN", "RACA", "GAMS", "KRAP", "SMUK", "SKOK",
-  "CILJ", "GOLI", "BOKS", "GOLF", "KROS", "ŽOGA", "DISK"
+  "CILJ", "GOLI", "BOKS", "GOLF", "KROS", "ŽOGA", "DISK",
+  "TEMA", "CENA", "KAVA", "TETA", "HRUP", "GOBA", "GROM", "OVCA",
+  "TEDEN", "JUTRO", "MISEL", "STRAN", "STRIC", "DEDEK", "DRAMA", "BANKA", "STROJ",
+  "VREME", "OGENJ", "BLISK", "MAČKA", "ŽOLNA", "METLA", "STROP", "OBRAZ", "PALEC",
+  "GLASBA", "BESEDA", "BABICA", "CIRKUS", "RUDNIK", "PRIMER", "OBLEKA",
+  "STRELA", "ZVEZDA", "ZEMLJA", "RECEPT"
 ]

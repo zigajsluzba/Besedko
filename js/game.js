@@ -1,5 +1,5 @@
 import { Board } from "./board.js?v=20260626-7";
-import { Keyboard } from "./keyboard.js?v=20260626-19";
+import { Keyboard } from "./keyboard.js?v=20260626-20";
 import { WordleEngine } from "./wordleEngine.js?v=20260626-7";
 import { Animations } from "./animations.js?v=20260626-7";
 
@@ -131,7 +131,7 @@ export class Game {
       this.updateHeaderStats();
       this.ui?.showMessage(`+10s — beseda rešena! (${this.timeAttackScore})`, "info", 1400);
       setTimeout(() => {
-        const next = this.dictionary?.getRandomAnswer() || this.answer;
+        const next = this._randomLengthAnswer();
         this._softRestart([next]);
       }, 1500);
       return;
@@ -167,7 +167,7 @@ export class Game {
         this.storage?.incrementStat("played");
         this.ui?.showMessage(`Beseda je bila ${this.answer}. Naslednja...`, "error", 2600);
         setTimeout(() => {
-          const next = this.dictionary?.getRandomAnswer() || this.answer;
+          const next = this._randomLengthAnswer();
           this._softRestart([next]);
         }, 2800);
         return;
@@ -293,6 +293,12 @@ export class Game {
 
   // --- Game modes ---
 
+  _randomLengthAnswer() {
+    const len = [4, 5, 6][Math.floor(Math.random() * 3)];
+    return this.dictionary?.getRandomByTopic("mešano", len) ||
+      this.dictionary?.getRandomAnswer() || this.answer;
+  }
+
   setGameMode(mode) {
     if (this.gameMode === mode && !this.gameOver) return;
     this.stopTimer();
@@ -301,9 +307,13 @@ export class Game {
     this.timeAttackScore = 0;
     this.rows = mode === "zen" ? 9 : 6;
     localStorage.setItem("besedko-gamemode", mode);
-    const answer = this.dictionary?.getDailyAnswer() || this.dictionary?.getRandomAnswer() || this.answer;
-    this.restart([answer]);
-    if (mode === "timeattack") this.startTimer();
+    if (mode !== "riddle") {
+      const answer = mode === "random"
+        ? this._randomLengthAnswer()
+        : (this.dictionary?.getDailyAnswer() || this.dictionary?.getRandomAnswer() || this.answer);
+      this.restart([answer]);
+      if (mode === "timeattack") this.startTimer();
+    }
     this.ui?.setGameMode(mode);
     this.ui?.showModeToast(mode);
   }

@@ -1,5 +1,5 @@
-import { Multiplayer } from "./multiplayer.js?v=20260626-19";
-import { config } from "./config.js?v=20260626-19";
+import { Multiplayer } from "./multiplayer.js?v=20260626-20";
+import { config } from "./config.js?v=20260626-20";
 
 export class UI {
   constructor(storage) {
@@ -103,6 +103,17 @@ export class UI {
     this.opponentBoardWrapper = document.getElementById("opponent-board-wrapper");
     this.opponentLabel = document.getElementById("opponent-label");
     this.mainElement = document.querySelector("main");
+
+    // Riddle panel
+    this.riddlePanel = document.getElementById("riddle-panel");
+    this.riddleCluesEl = document.getElementById("riddle-clues");
+    this.riddleNextClueBtn = document.getElementById("riddle-next-clue-btn");
+    this.riddleInput = document.getElementById("riddle-input");
+    this.riddleSubmitBtn = document.getElementById("riddle-submit-btn");
+    this.riddleResultEl = document.getElementById("riddle-result");
+    this.riddleNextBtn = document.getElementById("riddle-next-btn");
+    this.boardsContainer = document.getElementById("boards-container");
+    this.riddleGame = null;
 
     this.hideTimer = null;
     this._authCallbacks = {};
@@ -511,6 +522,8 @@ export class UI {
     hard:       { desc: "Vsako ugibanje mora vsebovati vse ugotovljene črke.", toast: "Težki način 🔥 — ugotovljene črke moraš uporabiti!" },
     timeattack: { desc: "3 minute, reši čim več besed. Za vsako rešeno +10 sekund.", toast: "Časovni napad ⏱ — 3 minute, reši čim več besed!" },
     zen:        { desc: "9 vrstic, brez poraza — igra se nadaljuje z novo besedo.", toast: "Zen način 🧘 — sprosti se, ni poraza." },
+    riddle:     { desc: "Ugani besedo ali zvezo iz namigov — čim manj namigov, tem boljše!", toast: "Uganka 🎭 — ugani iz namigov!" },
+    random:     { desc: "Naključna beseda — 4, 5 ali 6 črk. Tabela se prilagodi dolžini.", toast: "Naključni način 🎲 — nova dolžina vsako igro!" },
   };
 
   setGameMode(mode) {
@@ -519,8 +532,93 @@ export class UI {
     });
     const info = UI._modeInfo[mode] || UI._modeInfo.classic;
     if (this.gameModeDesc) this.gameModeDesc.textContent = info.desc;
+
+    const isRiddle = mode === "riddle";
     const isTimeAttack = mode === "timeattack";
+
+    if (this.boardsContainer) this.boardsContainer.style.display = isRiddle ? "none" : "";
+    const kb = document.getElementById("keyboard");
+    if (kb) kb.style.display = isRiddle ? "none" : "";
+    if (this.keyboardActions) this.keyboardActions.hidden = isRiddle || !this.hintsEnabled();
     if (this.gameTimerEl) this.gameTimerEl.hidden = !isTimeAttack;
+    if (this.riddlePanel) this.riddlePanel.hidden = !isRiddle;
+
+    if (isRiddle && this.riddleGame) this.startRiddle();
+  }
+
+  setRiddleGame(rg) {
+    this.riddleGame = rg;
+    this.riddleNextClueBtn?.addEventListener("click", () => this._riddleReveal());
+    this.riddleSubmitBtn?.addEventListener("click", () => this._riddleCheck());
+    this.riddleInput?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") this._riddleCheck();
+    });
+    this.riddleNextBtn?.addEventListener("click", () => this.startRiddle());
+  }
+
+  startRiddle() {
+    if (!this.riddleGame) return;
+    this.riddleGame.start();
+    this._renderRiddleClues();
+    if (this.riddleResultEl) { this.riddleResultEl.hidden = true; this.riddleResultEl.className = "riddle-result"; }
+    if (this.riddleNextBtn) this.riddleNextBtn.hidden = true;
+    if (this.riddleInput) { this.riddleInput.value = ""; this.riddleInput.disabled = false; }
+    if (this.riddleSubmitBtn) this.riddleSubmitBtn.disabled = false;
+    this._updateRiddleNextBtn();
+  }
+
+  _renderRiddleClues() {
+    if (!this.riddleCluesEl || !this.riddleGame?.current) return;
+    const clues = this.riddleGame.visibleClues;
+    const total = this.riddleGame.totalClues;
+    this.riddleCluesEl.innerHTML = clues.map((c, i) =>
+      `<div class="riddle-clue"><span class="riddle-clue-num">${i + 1}.</span><span>${c}</span></div>`
+    ).join("");
+    this.riddleCluesEl.insertAdjacentHTML("beforeend",
+      `<p style="text-align:center;color:var(--text-muted);font-size:0.85rem">Namig ${clues.length} / ${total}</p>`
+    );
+  }
+
+  _updateRiddleNextBtn() {
+    if (this.riddleNextClueBtn) this.riddleNextClueBtn.disabled = !this.riddleGame?.canRevealMore;
+  }
+
+  _riddleReveal() {
+    if (!this.riddleGame) return;
+    this.riddleGame.revealNext();
+    this._renderRiddleClues();
+    this._updateRiddleNextBtn();
+    if (this.riddleResultEl && !this.riddleGame.solved && !this.riddleGame.failed) {
+      this.riddleResultEl.hidden = true;
+    }
+  }
+
+  _riddleCheck() {
+    if (!this.riddleGame || !this.riddleInput) return;
+    const guess = this.riddleInput.value;
+    if (!guess.trim()) return;
+    const result = this.riddleGame.check(guess);
+    if (!result) return;
+    if (result.correct) {
+      const stars = "⭐".repeat(Math.max(1, result.score));
+      this._showRiddleResult(`Bravo! ${stars} (${this.riddleGame.revealedCount} namig${this.riddleGame.revealedCount === 1 ? "" : "i"})`, true);
+    } else if (this.riddleGame.failed) {
+      this._showRiddleResult(`Odgovor je bil: ${this.riddleGame.current.answer}`, false);
+    } else {
+      this._showRiddleResult("Napačno — poskusi znova ali razkrij namig.", false);
+      return;
+    }
+    if (this.riddleInput) this.riddleInput.disabled = true;
+    if (this.riddleSubmitBtn) this.riddleSubmitBtn.disabled = true;
+    if (this.riddleNextClueBtn) this.riddleNextClueBtn.disabled = true;
+    if (this.riddleNextBtn) this.riddleNextBtn.hidden = false;
+  }
+
+  _showRiddleResult(text, correct) {
+    if (!this.riddleResultEl) return;
+    this.riddleResultEl.textContent = text;
+    this.riddleResultEl.className = `riddle-result ${correct ? "correct" : "wrong"}`;
+    this.riddleResultEl.hidden = false;
   }
 
   showModeToast(mode) {

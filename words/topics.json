@@ -10,7 +10,8 @@
       "SRNA", "ŽABA", "PARK", "ŠOLA", "FILM", "DELO", "LETO", "SVET", "KRAJ",
       "GLAS", "SILA", "MEJA", "GOZD", "TOČA", "ROSA", "JAMA", "OSEL", "SLON",
       "KOZA", "KMET", "USTA", "DLAN", "PRST", "ČELO", "LUŽA", "JUHA", "ŽITO",
-      "OVES", "BROD", "MRAK", "PRAH", "VRAT"
+      "OVES", "BROD", "MRAK", "PRAH", "VRAT",
+      "TEMA", "CENA", "KAVA", "TETA", "TRAK", "HRUP"
     ],
     "5": [
       "ČEBEL", "ROBOT", "SONCE", "PTICA", "GLAVA", "KAMEN", "MLEKO", "TRAVA",
@@ -25,7 +26,8 @@
       "OCEAN", "PAVZA", "PLAST", "PUŠKA", "SEVER", "ŠKODA", "STEZA", "PILOT",
       "ŠOFER", "ŽUPAN", "PEVEC", "OVČAR", "REBRA", "BRADA", "BURJA", "SKALA",
       "NJIVA", "BLATO", "BREST", "ŠUNKA", "TORTA", "SIRUP", "BUREK", "TENIS",
-      "HOKEJ", "TEKAČ", "DIRKA", "GOBAR", "NAROK", "VEDRO", "RENTA", "REVMA"
+      "HOKEJ", "TEKAČ", "DIRKA", "GOBAR", "NAROK", "VEDRO", "RENTA", "REVMA",
+      "TEDEN", "JUTRO", "MISEL", "STRAN", "STRIC", "DEDEK", "DRAMA", "BANKA", "STROJ"
     ],
     "6": [
       "LETALO", "SESTRA", "PESNIK", "RIBNIK", "OBLAKI", "KMETJE", "TOPOLI",
@@ -33,7 +35,8 @@
       "SMREKA", "SMUČAR", "SODNIK", "VRTNAR", "SLIKAR", "STEKLO", "KOLENO",
       "TREBUH", "LISICA", "VRABEC", "PRAŠIČ", "SOLATA", "JAGODA", "SALAMA",
       "KAVICA", "ŽGANCI", "MORNAR", "GOZDAR", "UČENEC", "MIŠICA", "KOBILA",
-      "DELFIN", "OHROVT", "FITNES", "PLEZAČ", "STRELC", "TRENER"
+      "DELFIN", "OHROVT", "FITNES", "PLEZAČ", "STRELC", "TRENER",
+      "GLASBA", "BESEDA", "BABICA", "CIRKUS", "RUDNIK", "PRIMER"
     ]
   },
   "narava": {
@@ -42,16 +45,19 @@
     "4": [
       "LUNA", "GORA", "VRBA", "NEBO", "REKA", "VODA", "SNEG", "SLAP", "LIST",
       "ZRAK", "MRAK", "CVET", "BREG", "GOZD", "ROSA", "JAMA", "TOČA", "LUŽA",
-      "LOKA", "PRAH", "ŽITO", "SRNA", "SLON"
+      "LOKA", "PRAH", "ŽITO", "SRNA", "SLON",
+      "GOBA", "GROM"
     ],
     "5": [
       "DREVO", "TRAVA", "BREZA", "SONCE", "MORJE", "TOPOL", "KAMEN", "VETAR",
       "PTICA", "SKALA", "NJIVA", "MEGLA", "BURJA", "PLIMA", "OBLAK", "BLATO",
       "HRAST", "BREST", "VIHRA", "GORJE", "POLJE", "PELOD", "VZPON", "GABER",
-      "GOBAR"
+      "GOBAR",
+      "VREME", "OGENJ", "BLISK"
     ],
     "6": [
-      "OBLAKI", "TOPOLI", "RIBNIK", "JEZERO", "SMREKA", "DOLINA", "RAVNIK"
+      "OBLAKI", "TOPOLI", "RIBNIK", "JEZERO", "SMREKA", "DOLINA", "RAVNIK",
+      "STRELA", "ZVEZDA", "ZEMLJA"
     ]
   },
   "živali": {
@@ -59,11 +65,13 @@
     "icon": "🐾",
     "4": [
       "RIBA", "KAČA", "SOVA", "OREL", "VOLK", "KONJ", "SRNA", "ŽABA", "KRAP",
-      "KOZA", "RACA", "OSEL", "SLON", "GAMS", "OVEN"
+      "KOZA", "RACA", "OSEL", "SLON", "GAMS", "OVEN",
+      "OVCA"
     ],
     "5": [
       "PTICA", "ČEBEL", "LABOD", "VRANA", "JELEN", "BOBER", "ZAJEC", "MIŠKA",
-      "KRAVA", "KOZEL", "GOLOB", "TIGER", "RAČKA", "SRAKA", "BIZON"
+      "KRAVA", "KOZEL", "GOLOB", "TIGER", "RAČKA", "SRAKA", "BIZON",
+      "MAČKA", "ŽOLNA"
     ],
     "6": [
       "MEDVED", "LISICA", "KOBILA", "PRAŠIČ", "DELFIN", "VRABEC", "ŽIRAFA"
@@ -74,7 +82,8 @@
     "icon": "🍎",
     "4": [
       "VINO", "PIVO", "MESO", "KRUH", "JUHA", "ŽITO", "REPA", "FIGE", "OVES",
-      "AJDA", "MAST"
+      "AJDA", "MAST",
+      "KAVA", "GOBA"
     ],
     "5": [
       "MLEKO", "HRANA", "SADJE", "MALCA", "ŠUNKA", "TORTA", "SLIVA", "SIRUP",
@@ -82,7 +91,8 @@
     ],
     "6": [
       "KOSILO", "POTICA", "SOLATA", "JAGODA", "ŽGANCI", "OHROVT", "SALAMA",
-      "KAVICA", "JOGURT", "LIMONA", "REZANC"
+      "KAVICA", "JOGURT", "LIMONA", "REZANC",
+      "RECEPT"
     ]
   },
   "dom": {
@@ -93,10 +103,12 @@
     ],
     "5": [
       "STOLI", "STENA", "VRATA", "OKRAS", "SVEČA", "PEČKA", "TABLA", "KLJUČ",
-      "PISMO"
+      "PISMO",
+      "METLA", "STROP"
     ],
     "6": [
-      "PISALO", "KNJIGA", "OKENCE", "STEKLO", "POSODA"
+      "PISALO", "KNJIGA", "OKENCE", "STEKLO", "POSODA",
+      "OBLEKA"
     ]
   },
   "šport": {
@@ -138,7 +150,8 @@
     ],
     "5": [
       "GLAVA", "BRADA", "REBRA", "PLEČA", "ZOBJE", "UŠESA", "PRSTI", "SOLZE",
-      "LASJE", "SRČEK"
+      "LASJE", "SRČEK",
+      "OBRAZ", "PALEC"
     ],
     "6": [
       "TREBUH", "KOLENO", "MIŠICA", "RAMENA"

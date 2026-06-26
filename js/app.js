@@ -1,9 +1,10 @@
-import { Game } from "./game.js?v=20260626-19";
-import { Dictionary } from "./dictionary.js?v=20260626-19";
-import { Storage } from "./storage.js?v=20260626-19";
-import { UI } from "./ui.js?v=20260626-19";
-import { Multiplayer } from "./multiplayer.js?v=20260626-19";
-import { config } from "./config.js?v=20260626-19";
+import { Game } from "./game.js?v=20260626-20";
+import { Dictionary } from "./dictionary.js?v=20260626-20";
+import { Storage } from "./storage.js?v=20260626-20";
+import { UI } from "./ui.js?v=20260626-20";
+import { Multiplayer } from "./multiplayer.js?v=20260626-20";
+import { config } from "./config.js?v=20260626-20";
+import { RiddleGame } from "./riddleGame.js?v=20260626-20";
 import {
   onAuthChange,
   signInWithGoogle,
@@ -11,7 +12,7 @@ import {
   registerWithEmail,
   logout,
   friendlyAuthError,
-} from "./auth.js?v=20260626-19";
+} from "./auth.js?v=20260626-20";
 
 window.__besedkoInitStatus = "pending";
 window.__besedkoInitError = null;
@@ -62,8 +63,27 @@ async function init() {
     );
     const mode = String(storedMode || "single").toLowerCase();
     const savedGameMode = localStorage.getItem("besedko-gamemode") || "classic";
-    const dailyAnswer = dict.getDailyAnswer();
-    const answers = dailyAnswer ? [dailyAnswer] : dict.getDailyAnswers(1);
+
+    // Load riddles and wire riddle game
+    try {
+      const riddleResp = await fetch("words/riddles.json?v=20260626-20");
+      if (riddleResp.ok) {
+        const riddles = await riddleResp.json();
+        const riddleGame = new RiddleGame(riddles);
+        ui.setRiddleGame(riddleGame);
+      }
+    } catch (e) {
+      console.warn("[Riddle] Failed to load riddles:", e);
+    }
+
+    let initialAnswer;
+    if (savedGameMode === "random") {
+      const len = [4, 5, 6][Math.floor(Math.random() * 3)];
+      initialAnswer = dict.getRandomByTopic("mešano", len) || dict.getRandomAnswer();
+    } else {
+      initialAnswer = dict.getDailyAnswer();
+    }
+    const answers = initialAnswer ? [initialAnswer] : dict.getDailyAnswers(1);
     const game = new Game(answers, dict, storage, ui, mode, savedGameMode);
 
     if (mode === "multiplayer") {
