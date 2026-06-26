@@ -1,7 +1,7 @@
-import { Board } from "./board.js?v=20260626-6";
-import { Keyboard } from "./keyboard.js?v=20260626-6";
-import { WordleEngine } from "./wordleEngine.js?v=20260626-6";
-import { Animations } from "./animations.js?v=20260626-6";
+import { Board } from "./board.js?v=20260626-7";
+import { Keyboard } from "./keyboard.js?v=20260626-7";
+import { WordleEngine } from "./wordleEngine.js?v=20260626-7";
+import { Animations } from "./animations.js?v=20260626-7";
 
 export class Game {
   /**
@@ -166,10 +166,12 @@ export class Game {
     this.roundGuesses = [];
     this.hintUsed = false;
     this.boardStates = [];
+    this.board.rows = this.rows;
     this.board.cols = this.cols;
     this.board.create();
     this.keyboard.resetKeys();
     if (this.opponentBoard) {
+      this.opponentBoard.rows = this.rows;
       this.opponentBoard.cols = this.cols;
       this.opponentBoard.create();
     }
@@ -250,6 +252,7 @@ export class Game {
       answers: this.answers,
       answer: this.answer,
       wordLength: this.cols,
+      rows: this.rows,
       topic: this.topic,
     };
   }
@@ -257,6 +260,9 @@ export class Game {
   /** Guest calls this when receiving game-config from host. */
   receiveGameConfig(config) {
     if (!config) return;
+    if (Number.isInteger(config.rows) && config.rows >= 1) {
+      this.rows = config.rows;
+    }
     const answers = this.normalizeAnswers(
       config.answers || (config.answer ? [config.answer] : [])
     );

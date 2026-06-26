@@ -1,10 +1,12 @@
-import { Multiplayer } from "./multiplayer.js?v=20260626-6";
+import { Multiplayer } from "./multiplayer.js?v=20260626-7";
 
 export class UI {
   constructor(storage) {
     this.storage = storage;
     this.game = null;
     this.selectedWordLength = 5;
+    this.selectedRows = 6;
+    this.selectedTopic = "mešano";
 
     // Core UI elements
     this.messageElement = document.getElementById("message");
@@ -30,16 +32,15 @@ export class UI {
     this.joinRoomButton = document.getElementById("multiplayer-join");
     this.leaveRoomButton = document.getElementById("multiplayer-leave");
 
-    // Topic + word length selectors
+    // Settings
     this.mpSettings = document.getElementById("mp-settings");
-    this.mpTopicSelect = document.getElementById("mp-topic-select");
+    this.mpTopicContainer = document.getElementById("mp-topic-buttons");
     this.mpLengthButtons = document.querySelectorAll(".mp-length-btn");
+    this.mpRowsButtons = document.querySelectorAll(".mp-rows-btn");
 
     // Opponent board
     this.opponentBoardWrapper = document.getElementById("opponent-board-wrapper");
     this.opponentLabel = document.getElementById("opponent-label");
-    this.myBoardLabel = document.getElementById("my-board-label");
-    this.boardsContainer = document.getElementById("boards-container");
     this.mainElement = document.querySelector("main");
 
     this.hideTimer = null;
@@ -87,23 +88,40 @@ export class UI {
     this.mpLengthButtons.forEach((btn) => {
       btn.addEventListener("click", () => {
         this.selectedWordLength = parseInt(btn.dataset.length, 10) || 5;
-        this.mpLengthButtons.forEach((b) =>
-          b.classList.toggle("active", b === btn)
-        );
+        this.mpLengthButtons.forEach((b) => b.classList.toggle("active", b === btn));
+      });
+    });
+
+    // Rows buttons
+    this.mpRowsButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        this.selectedRows = parseInt(btn.dataset.rows, 10) || 6;
+        this.mpRowsButtons.forEach((b) => b.classList.toggle("active", b === btn));
       });
     });
   }
 
-  /** Populate topic dropdown from dictionary. */
+  /** Build topic toggle buttons from dictionary. */
   populateTopics() {
-    if (!this.mpTopicSelect || !this.game?.dictionary) return;
+    if (!this.mpTopicContainer || !this.game?.dictionary) return;
     const topics = this.game.dictionary.getTopics();
-    this.mpTopicSelect.innerHTML = "";
-    topics.forEach(({ key, label }) => {
-      const opt = document.createElement("option");
-      opt.value = key;
-      opt.textContent = label;
-      this.mpTopicSelect.appendChild(opt);
+    this.mpTopicContainer.innerHTML = "";
+    topics.forEach(({ key, label, icon }) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "mp-topic-btn" + (key === this.selectedTopic ? " active" : "");
+      btn.dataset.topic = key;
+      btn.title = label;
+      btn.innerHTML = icon
+        ? `<span class="mp-topic-icon">${icon}</span><span class="mp-topic-label">${label}</span>`
+        : label;
+      btn.addEventListener("click", () => {
+        this.selectedTopic = key;
+        this.mpTopicContainer.querySelectorAll(".mp-topic-btn").forEach((b) =>
+          b.classList.toggle("active", b === btn)
+        );
+      });
+      this.mpTopicContainer.appendChild(btn);
     });
   }
 
@@ -118,8 +136,7 @@ export class UI {
     this.modeMultiButton?.classList.toggle("active", normalized === "multiplayer");
 
     if (this.dailyMode) {
-      this.dailyMode.textContent =
-        normalized === "multiplayer" ? "Multi" : "Daily";
+      this.dailyMode.textContent = normalized === "multiplayer" ? "Multi" : "Daily";
     }
     if (this.multiplayerPanel) {
       this.multiplayerPanel.classList.toggle("visible", normalized === "multiplayer");
@@ -159,8 +176,9 @@ export class UI {
     if (!nickname) return;
     this.game.multiplayer.setNickname(nickname);
 
-    const topic = this.mpTopicSelect?.value || "mešano";
+    const topic = this.selectedTopic || "mešano";
     const wordLength = this.selectedWordLength || 5;
+    const rows = this.selectedRows || 6;
 
     let answer = null;
     if (this.game.dictionary) {
@@ -169,6 +187,7 @@ export class UI {
     if (!answer) answer = this.game.dictionary?.getRandomAnswer() || this.game.answer;
 
     this.game.topic = topic;
+    this.game.rows = rows;
     this.game.restart([answer]);
 
     const roomCode = this.game.multiplayer.createRoom();
@@ -224,9 +243,7 @@ export class UI {
   }
 
   setOpponentNickname(name) {
-    if (this.opponentLabel) {
-      this.opponentLabel.textContent = name || "Nasprotnik";
-    }
+    if (this.opponentLabel) this.opponentLabel.textContent = name || "Nasprotnik";
   }
 
   // --- Status display ---
@@ -235,7 +252,6 @@ export class UI {
     if (this.roomCodeElement) {
       this.roomCodeElement.textContent = code ? `Soba: ${code}` : "Soba: -";
     }
-    // Hide settings while a room is active; show them when no room is open.
     if (this.mpSettings) this.mpSettings.hidden = Boolean(code);
   }
 

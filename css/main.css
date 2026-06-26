@@ -172,10 +172,8 @@ main.mp-active {
 /* Settings shown before room is created */
 .mp-settings {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
   width: 100%;
   padding: 10px 12px;
   background: rgba(255,255,255,0.03);
@@ -187,6 +185,7 @@ main.mp-active {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .mp-label {
@@ -198,20 +197,43 @@ main.mp-active {
   white-space: nowrap;
 }
 
-.mp-select {
-  background: rgba(255,255,255,0.07);
-  color: #fff;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 4px 8px;
-  font-size: 0.87rem;
-  cursor: pointer;
-  outline: none;
-  transition: border-color 150ms;
+.mp-topic-buttons {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
 }
 
-.mp-select:focus {
-  border-color: var(--border-hi);
+.mp-topic-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255,255,255,0.06);
+  color: #aaa;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 8px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 600;
+  transition: background 150ms, color 150ms, border-color 150ms;
+  white-space: nowrap;
+}
+
+.mp-topic-btn .mp-topic-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.mp-topic-btn .mp-topic-label {
+  font-size: 0.67rem;
+}
+
+.mp-topic-btn.active,
+.mp-topic-btn:hover {
+  background: rgba(255,255,255,0.88);
+  color: #111;
+  border-color: transparent;
 }
 
 .mp-length-buttons {

@@ -36,17 +36,26 @@
         <!-- Topic + word length settings (host picks before creating room; hidden once room is active) -->
         <div class="mp-settings" id="mp-settings">
           <div class="mp-setting-group">
-            <label class="mp-label" for="mp-topic-select">Tema</label>
-            <select id="mp-topic-select" class="mp-select">
-              <option value="mešano">Mešano</option>
-            </select>
+            <span class="mp-label">Tema</span>
+            <div class="mp-topic-buttons" id="mp-topic-buttons" role="group" aria-label="Tema"></div>
           </div>
           <div class="mp-setting-group">
-            <label class="mp-label">Dolžina</label>
+            <span class="mp-label">Dolžina</span>
             <div class="mp-length-buttons" role="group" aria-label="Dolžina besede">
               <button class="mp-length-btn" data-length="4" type="button">4</button>
               <button class="mp-length-btn active" data-length="5" type="button">5</button>
               <button class="mp-length-btn" data-length="6" type="button">6</button>
+            </div>
+          </div>
+          <div class="mp-setting-group">
+            <span class="mp-label">Poskusi</span>
+            <div class="mp-length-buttons" role="group" aria-label="Število poskusov">
+              <button class="mp-rows-btn" data-rows="3" type="button">3</button>
+              <button class="mp-rows-btn" data-rows="4" type="button">4</button>
+              <button class="mp-rows-btn" data-rows="5" type="button">5</button>
+              <button class="mp-rows-btn active" data-rows="6" type="button">6</button>
+              <button class="mp-rows-btn" data-rows="7" type="button">7</button>
+              <button class="mp-rows-btn" data-rows="8" type="button">8</button>
             </div>
           </div>
         </div>
@@ -86,6 +95,6 @@
       </div>
     </div>
 
-    <script type="module" src="js/app.js?v=20260626-6"></script>
+    <script type="module" src="js/app.js?v=20260626-7"></script>
   </body>
 </html>
