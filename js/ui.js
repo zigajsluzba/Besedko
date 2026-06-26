@@ -1,5 +1,5 @@
-import { Multiplayer } from "./multiplayer.js?v=20260626-9";
-import { config } from "./config.js?v=20260626-9";
+import { Multiplayer } from "./multiplayer.js?v=20260626-11";
+import { config } from "./config.js?v=20260626-11";
 
 export class UI {
   constructor(storage) {
@@ -38,6 +38,7 @@ export class UI {
     this.mpInroom = document.getElementById("mp-inroom");
     this.mpRoomCodeDisplay = document.getElementById("mp-room-code-display");
     this.mpMyName = document.getElementById("mp-my-name");
+    this.mpRoomTopicDisplay = document.getElementById("mp-room-topic-display");
     this.leaveRoomButton = document.getElementById("multiplayer-leave");
     this.mpConfirm = document.getElementById("mp-confirm");
     this.mpConfirmText = document.getElementById("mp-confirm-text");
@@ -354,7 +355,20 @@ export class UI {
     if (this.mpPreroom) this.mpPreroom.hidden = inRoom;
     if (this.mpInroom) this.mpInroom.hidden = !inRoom;
     if (this.mpRoomCodeDisplay) this.mpRoomCodeDisplay.textContent = code || "–";
-    if (!inRoom) this.hideConfirmDialog();
+    if (!inRoom) {
+      this.hideConfirmDialog();
+      if (this.mpRoomTopicDisplay) this.mpRoomTopicDisplay.textContent = "–";
+    }
+  }
+
+  setRoomTopic(topicKey) {
+    if (!this.mpRoomTopicDisplay) return;
+    if (!topicKey) { this.mpRoomTopicDisplay.textContent = "–"; return; }
+    const topics = this.game?.dictionary?.getTopics() || [];
+    const found = topics.find((t) => t.key === topicKey);
+    this.mpRoomTopicDisplay.textContent = found
+      ? `${found.icon ? found.icon + " " : ""}${found.label}`
+      : topicKey;
   }
 
   setPlayerName(name) {

@@ -260,6 +260,7 @@ export class Game {
   /** Guest calls this when receiving game-config from host. */
   receiveGameConfig(config) {
     if (!config) return;
+    if (config.topic) this.topic = config.topic;
     if (Number.isInteger(config.rows) && config.rows >= 1) {
       this.rows = config.rows;
     }

@@ -93,6 +93,7 @@ export class Multiplayer {
       join_request: null,
     });
 
+    this.ui?.setRoomTopic(this.game.topic);
     this.ui?.setOpponentNickname(this.peerNickname);
     this.ui?.showOpponentBoard();
     this.ui?.hideConfirmDialog();
@@ -220,6 +221,7 @@ export class Multiplayer {
       try { this.game.receiveGameConfig(d.game_config); } catch (e) {
         console.error("[MP] receiveGameConfig failed:", e);
       }
+      this.ui?.setRoomTopic(d.game_config.topic);
       this.ui?.setOpponentNickname(this.peerNickname);
       this.ui?.showOpponentBoard();
       this.ui?.hideConfirmDialog();
