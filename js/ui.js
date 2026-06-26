@@ -1,5 +1,5 @@
-import { Multiplayer } from "./multiplayer.js?v=20260626-12";
-import { config } from "./config.js?v=20260626-12";
+import { Multiplayer } from "./multiplayer.js?v=20260626-13";
+import { config } from "./config.js?v=20260626-13";
 
 export class UI {
   constructor(storage) {
@@ -251,7 +251,11 @@ export class UI {
 
     if (normalized === "single") {
       this.hideOpponentBoard();
-      this.showMessage("Single mode je aktiven.", "info", 1800);
+      if (this.game && this.game.cols !== 5) {
+        this.game.rows = 6;
+        const daily = this.game.dictionary?.getDailyAnswer() || this.game.dictionary?.getRandomAnswer();
+        if (daily) this.game.restart([daily]);
+      }
     }
   }
 
