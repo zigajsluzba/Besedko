@@ -544,6 +544,71 @@ main.mp-active .board-label {
   font-size: 0.72rem;
 }
 
+/* ─── Keyboard actions (hint) ───────────────── */
+.keyboard-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+.hint-btn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  color: var(--text-muted);
+  border-radius: 8px;
+  padding: 5px 16px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 100ms, color 100ms;
+}
+
+.hint-btn:hover:not(:disabled) {
+  background: rgba(255,255,255,0.07);
+  color: var(--text);
+}
+
+.hint-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.keyboard-actions[hidden] {
+  display: none;
+}
+
+/* ─── Toggle switch ──────────────────────────── */
+.toggle-btn {
+  width: 42px;
+  height: 24px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.15);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+  transition: background 200ms;
+  flex-shrink: 0;
+}
+
+.toggle-btn[aria-checked="true"] {
+  background: var(--correct);
+}
+
+.toggle-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 200ms;
+}
+
+.toggle-btn[aria-checked="true"] .toggle-knob {
+  transform: translateX(18px);
+}
+
 /* ─── Message overlay ────────────────────────── */
 .message {
   position: fixed;

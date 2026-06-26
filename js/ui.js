@@ -1,5 +1,5 @@
-import { Multiplayer } from "./multiplayer.js?v=20260626-16";
-import { config } from "./config.js?v=20260626-16";
+import { Multiplayer } from "./multiplayer.js?v=20260626-17";
+import { config } from "./config.js?v=20260626-17";
 
 export class UI {
   constructor(storage) {
@@ -19,6 +19,8 @@ export class UI {
     this.newGameButton = document.getElementById("new-game-button");
     this.statsNewGameButton = document.getElementById("stats-new-game-button");
     this.hintButton = document.getElementById("hint-button");
+    this.hintsToggle = document.getElementById("hints-toggle");
+    this.keyboardActions = document.querySelector(".keyboard-actions");
     this.statsSummary = document.getElementById("stats-summary");
     this.roundSummary = document.getElementById("round-summary");
     this.dailyMode = document.getElementById("daily-mode");
@@ -163,6 +165,8 @@ export class UI {
       if (daily) this.game.restart([daily]);
       this.closeAuthModal();
     });
+    this.hintsToggle?.addEventListener("click", () => this._toggleHints());
+    this._initHints();
 
     // Create modal
     this.mpCreateClose?.addEventListener("click", () => this.closeCreateModal());
@@ -444,6 +448,9 @@ export class UI {
     const lang = this.game?.keyboard?.lang || localStorage.getItem("besedko-lang") || "sl";
     this.langSlBtn?.classList.toggle("active", lang === "sl");
     this.langIntBtn?.classList.toggle("active", lang === "int");
+    // Sync hints toggle
+    const hintsOn = this.hintsEnabled();
+    this.hintsToggle?.setAttribute("aria-checked", hintsOn ? "true" : "false");
     this.authModal?.classList.add("visible");
   }
 
@@ -451,6 +458,27 @@ export class UI {
     this.game?.keyboard?.setLang(lang);
     this.langSlBtn?.classList.toggle("active", lang === "sl");
     this.langIntBtn?.classList.toggle("active", lang === "int");
+  }
+
+  _initHints() {
+    const enabled = localStorage.getItem("besedko-hints") !== "false";
+    this._setHintsEnabled(enabled);
+  }
+
+  _toggleHints() {
+    const current = this.hintsToggle?.getAttribute("aria-checked") === "true";
+    this._setHintsEnabled(!current);
+  }
+
+  _setHintsEnabled(enabled) {
+    localStorage.setItem("besedko-hints", enabled ? "true" : "false");
+    this.hintsToggle?.setAttribute("aria-checked", enabled ? "true" : "false");
+    if (this.keyboardActions) this.keyboardActions.hidden = !enabled;
+    this.updateHintButton();
+  }
+
+  hintsEnabled() {
+    return localStorage.getItem("besedko-hints") !== "false";
   }
 
   closeAuthModal() {
@@ -582,9 +610,8 @@ export class UI {
 
   updateHintButton() {
     if (!this.hintButton) return;
-    const disabled = !this.game || this.game.gameOver || this.game.hintUsed;
+    const disabled = !this.game || this.game.gameOver || this.game.hintUsed || !this.hintsEnabled();
     this.hintButton.disabled = disabled;
-    this.hintButton.style.opacity = disabled ? "0.5" : "1";
     this.hintButton.setAttribute("aria-disabled", disabled ? "true" : "false");
   }
 }

@@ -1,9 +1,9 @@
-import { Game } from "./game.js?v=20260626-16";
-import { Dictionary } from "./dictionary.js?v=20260626-16";
-import { Storage } from "./storage.js?v=20260626-16";
-import { UI } from "./ui.js?v=20260626-16";
-import { Multiplayer } from "./multiplayer.js?v=20260626-16";
-import { config } from "./config.js?v=20260626-16";
+import { Game } from "./game.js?v=20260626-17";
+import { Dictionary } from "./dictionary.js?v=20260626-17";
+import { Storage } from "./storage.js?v=20260626-17";
+import { UI } from "./ui.js?v=20260626-17";
+import { Multiplayer } from "./multiplayer.js?v=20260626-17";
+import { config } from "./config.js?v=20260626-17";
 import {
   onAuthChange,
   signInWithGoogle,
@@ -11,7 +11,7 @@ import {
   registerWithEmail,
   logout,
   friendlyAuthError,
-} from "./auth.js?v=20260626-16";
+} from "./auth.js?v=20260626-17";
 
 window.__besedkoInitStatus = "pending";
 window.__besedkoInitError = null;

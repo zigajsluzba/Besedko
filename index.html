@@ -19,9 +19,6 @@
         <div id="daily-mode" class="daily-mode" aria-live="polite">Daily</div>
         <div id="stats-summary" class="stats-summary" aria-live="polite">0/0</div>
         <div id="round-summary" class="round-summary" aria-live="polite">1/1</div>
-        <button class="icon-button" id="hint-button" aria-label="Namig">💡</button>
-        <button class="icon-button" id="new-game-button" aria-label="Nova igra">↺</button>
-        <button class="icon-button" id="stats-button" aria-label="Odpri statistiko">📊</button>
         <!-- Auth: shows login button when logged out, user chip when logged in -->
         <button class="icon-button auth-header-btn" id="auth-btn" aria-label="Prijava">👤</button>
         <button class="auth-user-chip" id="auth-user-chip" hidden aria-label="Profil">
@@ -85,6 +82,9 @@
       </div>
 
       <section id="keyboard" class="keyboard" aria-label="Tipkovnica"></section>
+      <div class="keyboard-actions">
+        <button class="hint-btn" id="hint-button" aria-label="Namig">💡 Namig</button>
+      </div>
       <div id="message" class="message" aria-live="assertive" role="alert"></div>
     </main>
 
@@ -222,6 +222,12 @@
                 <button class="mode-button" id="lang-int-btn" type="button">INT</button>
               </div>
             </div>
+            <div class="auth-profile-setting">
+              <span class="mp-label">Namigi</span>
+              <button class="toggle-btn" id="hints-toggle" type="button" role="switch" aria-checked="true">
+                <span class="toggle-knob"></span>
+              </button>
+            </div>
             <button id="profile-new-game-btn" class="secondary-button" type="button">Nova igra ↺</button>
             <button id="auth-logout-btn" class="secondary-button auth-logout-btn" type="button">Odjavi se</button>
           </div>
@@ -229,6 +235,6 @@
       </div>
     </div>
 
-    <script type="module" src="js/app.js?v=20260626-16"></script>
+    <script type="module" src="js/app.js?v=20260626-17"></script>
   </body>
 </html>
