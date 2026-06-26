@@ -7,7 +7,7 @@
   --border-hi:  rgba(255,255,255,0.30);
   --text:       #ffffff;
   --text-muted: #888;
-  --correct:    #538d4e;
+  --correct:    #6aaa64;
   --present:    #b59f3b;
   --absent:     #3a3a3c;
   --tile-size:  62px;
@@ -455,7 +455,7 @@ main.mp-active .board-label {
 .tile {
   width: var(--tile-size);
   height: var(--tile-size);
-  border: 2px solid rgba(255,255,255,0.08);
+  border: 2px solid rgba(255,255,255,0.12);
   background: transparent;
   color: var(--text);
   display: flex;
@@ -464,7 +464,7 @@ main.mp-active .board-label {
   font-size: 1.8rem;
   font-weight: 800;
   text-transform: uppercase;
-  border-radius: var(--radius);
+  border-radius: 10px;
   transition: border-color 80ms ease;
   user-select: none;
 }
@@ -511,15 +511,17 @@ main.mp-active .board-label {
   display: flex;
   justify-content: center;
   gap: 5px;
+  width: 100%;
 }
 
 .key {
-  height: 54px;
-  min-width: 36px;
-  background: #6b6b6e;
+  flex: 1;
+  height: 56px;
+  min-width: 0;
+  background: #565659;
   color: var(--text);
   border: none;
-  border-radius: 7px;
+  border-radius: 4px;
   padding: 0 6px;
   display: inline-flex;
   align-items: center;
@@ -539,8 +541,7 @@ main.mp-active .board-label {
 }
 
 .large {
-  min-width: 60px;
-  font-size: 0.76rem;
+  font-size: 0.72rem;
 }
 
 /* ─── Message overlay ────────────────────────── */
@@ -746,6 +747,71 @@ main.mp-active .board-label {
   margin-bottom: 8px;
 }
 
+.auth-profile-stats {
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border-radius: 10px;
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.stat-row strong {
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.auth-profile-setting {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.auth-profile-setting .mp-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.auth-profile-setting .mode-switch {
+  display: flex;
+  gap: 6px;
+}
+
+.auth-profile-setting .mode-button {
+  padding: 5px 14px;
+  font-size: 0.82rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 100ms, color 100ms, border-color 100ms;
+}
+
+.auth-profile-setting .mode-button.active {
+  background: var(--correct);
+  border-color: var(--correct);
+  color: #fff;
+}
+
+#profile-new-game-btn {
+  width: 100%;
+}
+
 .auth-logout-btn {
   border-color: rgba(255,80,80,0.3);
   color: #ff8080;
@@ -916,8 +982,8 @@ main.mp-active .board-label {
     gap: 14px;
   }
 
-  .key { height: 46px; min-width: 30px; font-size: 0.76rem; padding: 0 4px; }
-  .large { min-width: 50px; font-size: 0.72rem; }
+  .key { height: 46px; min-width: 0; font-size: 0.76rem; padding: 0 4px; }
+  .large { font-size: 0.68rem; }
 
   h1 { font-size: 1.15rem; }
   .header-actions { gap: 4px; }
@@ -931,8 +997,8 @@ main.mp-active .board-label {
   main.mp-active .board:not(.board--opponent) { --tile-size: 40px; }
   .board--opponent { --tile-size: 24px; }
 
-  .key { height: 42px; min-width: 26px; font-size: 0.7rem; padding: 0 3px; }
-  .large { min-width: 44px; }
+  .key { height: 42px; min-width: 0; font-size: 0.7rem; padding: 0 3px; }
+  .large { font-size: 0.65rem; }
 
   .stats-summary, .round-summary, .daily-mode { display: none; }
 }

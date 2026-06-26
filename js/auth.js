@@ -73,16 +73,19 @@ export function getCurrentUser(appConfig) {
 
 export function friendlyAuthError(code) {
   const map = {
-    "auth/invalid-credential":    "Napačen e-naslov ali geslo.",
-    "auth/user-not-found":        "Račun s tem e-naslovom ne obstaja.",
-    "auth/wrong-password":        "Napačno geslo.",
-    "auth/email-already-in-use":  "E-naslov je že v uporabi.",
-    "auth/weak-password":         "Geslo mora imeti vsaj 6 znakov.",
-    "auth/invalid-email":         "Neveljavna oblika e-naslova.",
-    "auth/too-many-requests":     "Preveč poskusov. Počakaj malo.",
-    "auth/network-request-failed":"Napaka v omrežju.",
-    "auth/popup-closed-by-user":  null,
+    "auth/invalid-credential":      "Napačen e-naslov ali geslo.",
+    "auth/user-not-found":          "Račun s tem e-naslovom ne obstaja.",
+    "auth/wrong-password":          "Napačno geslo.",
+    "auth/email-already-in-use":    "E-naslov je že v uporabi.",
+    "auth/weak-password":           "Geslo mora imeti vsaj 6 znakov.",
+    "auth/invalid-email":           "Neveljavna oblika e-naslova.",
+    "auth/too-many-requests":       "Preveč poskusov. Počakaj malo.",
+    "auth/network-request-failed":  "Napaka v omrežju.",
+    "auth/popup-blocked":           "Brskalnik je blokiral okno. Dovoli pojavna okna.",
+    "auth/unauthorized-domain":     "Domena ni pooblaščena v Firebase konzoli.",
+    "auth/popup-closed-by-user":    null,
     "auth/cancelled-popup-request": null,
   };
-  return map[code] ?? "Napaka pri prijavi. Poskusi znova.";
+  if (code in map) return map[code];
+  return "Napaka pri prijavi. Poskusi znova.";
 }

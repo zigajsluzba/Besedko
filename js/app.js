@@ -1,9 +1,9 @@
-import { Game } from "./game.js?v=20260626-14";
-import { Dictionary } from "./dictionary.js?v=20260626-14";
-import { Storage } from "./storage.js?v=20260626-14";
-import { UI } from "./ui.js?v=20260626-14";
-import { Multiplayer } from "./multiplayer.js?v=20260626-14";
-import { config } from "./config.js?v=20260626-14";
+import { Game } from "./game.js?v=20260626-16";
+import { Dictionary } from "./dictionary.js?v=20260626-16";
+import { Storage } from "./storage.js?v=20260626-16";
+import { UI } from "./ui.js?v=20260626-16";
+import { Multiplayer } from "./multiplayer.js?v=20260626-16";
+import { config } from "./config.js?v=20260626-16";
 import {
   onAuthChange,
   signInWithGoogle,
@@ -11,7 +11,7 @@ import {
   registerWithEmail,
   logout,
   friendlyAuthError,
-} from "./auth.js?v=20260626-14";
+} from "./auth.js?v=20260626-16";
 
 window.__besedkoInitStatus = "pending";
 window.__besedkoInitError = null;
@@ -115,6 +115,7 @@ async function init() {
             await signInWithGoogle(config.firebaseApp);
             ui.closeAuthModal();
           } catch (e) {
+            console.error("[Auth] Google sign-in error:", e.code, e.message);
             const msg = friendlyAuthError(e.code);
             if (msg) ui.showAuthError(msg);
           } finally {

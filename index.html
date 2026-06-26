@@ -210,12 +210,25 @@
             <div class="auth-profile-avatar" id="auth-profile-avatar"></div>
             <div class="auth-profile-name" id="auth-profile-name"></div>
             <div class="auth-profile-email" id="auth-profile-email"></div>
+            <div class="auth-profile-stats">
+              <div class="stat-row"><span>Odigrane igre</span><strong id="profile-stats-played">0</strong></div>
+              <div class="stat-row"><span>Zmage</span><strong id="profile-stats-wins">0</strong></div>
+              <div class="stat-row"><span>Uspešnost</span><strong id="profile-stats-pct">0%</strong></div>
+            </div>
+            <div class="auth-profile-setting">
+              <span class="mp-label">Tipkovnica</span>
+              <div class="mode-switch" role="group" aria-label="Jezik tipkovnice">
+                <button class="mode-button" id="lang-sl-btn" type="button">SLO</button>
+                <button class="mode-button" id="lang-int-btn" type="button">INT</button>
+              </div>
+            </div>
+            <button id="profile-new-game-btn" class="secondary-button" type="button">Nova igra ↺</button>
             <button id="auth-logout-btn" class="secondary-button auth-logout-btn" type="button">Odjavi se</button>
           </div>
         </div>
       </div>
     </div>
 
-    <script type="module" src="js/app.js?v=20260626-14"></script>
+    <script type="module" src="js/app.js?v=20260626-16"></script>
   </body>
 </html>

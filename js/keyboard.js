@@ -2,11 +2,20 @@ export class Keyboard {
   constructor(cb) {
     this.cb = cb;
     this.element = document.getElementById("keyboard");
-    this.layout = [
-      ["Q", "W", "E", "R", "T", "Z", "U", "I", "O", "P", "Š"],
-      ["A", "S", "D", "F", "G", "H", "J", "K", "L", "Č", "Ž"],
-      ["ENTER", "Y", "X", "C", "V", "B", "N", "M", "←"],
-    ];
+    this.lang = localStorage.getItem("besedko-lang") || "sl";
+    this.layouts = {
+      int: [
+        ["Q", "W", "E", "R", "T", "Z", "U", "I", "O", "P", "Š"],
+        ["A", "S", "D", "F", "G", "H", "J", "K", "L", "Č", "Ž"],
+        ["ENTER", "Y", "X", "C", "V", "B", "N", "M", "←"],
+      ],
+      sl: [
+        ["E", "R", "T", "Z", "U", "I", "O", "P", "Š"],
+        ["A", "S", "D", "F", "G", "H", "J", "K", "L", "Č", "Ž"],
+        ["ENTER", "C", "V", "B", "N", "M", "←"],
+      ],
+    };
+    this.layout = this.layouts[this.lang] || this.layouts.sl;
     this.create();
     this.register();
   }
@@ -21,7 +30,7 @@ export class Keyboard {
         const b = document.createElement("button");
         b.className = "key";
         if (k === "ENTER" || k === "←") b.classList.add("large");
-        b.textContent = k;
+        b.textContent = k === "ENTER" ? "enter ↵" : k;
         b.dataset.key = k;
         b.setAttribute("aria-label", k === "←" ? "Briši" : k === "ENTER" ? "Potrdi" : k);
         b.onclick = () => this.cb(k);
@@ -29,6 +38,18 @@ export class Keyboard {
       });
       this.element.appendChild(d);
     });
+  }
+
+  setLang(lang) {
+    const states = {};
+    this.element?.querySelectorAll(".key").forEach((btn) => {
+      if (btn.dataset.state) states[btn.dataset.key] = btn.dataset.state;
+    });
+    this.lang = lang;
+    this.layout = this.layouts[lang] || this.layouts.sl;
+    localStorage.setItem("besedko-lang", lang);
+    this.create();
+    Object.entries(states).forEach(([key, state]) => this.setKeyState(key, state));
   }
 
   register() {

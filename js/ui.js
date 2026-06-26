@@ -1,5 +1,5 @@
-import { Multiplayer } from "./multiplayer.js?v=20260626-14";
-import { config } from "./config.js?v=20260626-14";
+import { Multiplayer } from "./multiplayer.js?v=20260626-16";
+import { config } from "./config.js?v=20260626-16";
 
 export class UI {
   constructor(storage) {
@@ -82,6 +82,12 @@ export class UI {
     this.authProfileName = document.getElementById("auth-profile-name");
     this.authProfileEmail = document.getElementById("auth-profile-email");
     this.authLogoutBtn = document.getElementById("auth-logout-btn");
+    this.profileStatsPlayed = document.getElementById("profile-stats-played");
+    this.profileStatsWins = document.getElementById("profile-stats-wins");
+    this.profileStatsPct = document.getElementById("profile-stats-pct");
+    this.langSlBtn = document.getElementById("lang-sl-btn");
+    this.langIntBtn = document.getElementById("lang-int-btn");
+    this.profileNewGameBtn = document.getElementById("profile-new-game-btn");
 
     // Opponent board
     this.opponentBoardWrapper = document.getElementById("opponent-board-wrapper");
@@ -148,6 +154,14 @@ export class UI {
     this.authLogoutBtn?.addEventListener("click", () => this._authCallbacks.onLogout?.());
     this.authPasswordInput?.addEventListener("keydown", (e) => {
       if (e.key === "Enter") this._authCallbacks.onSignin?.();
+    });
+    this.langSlBtn?.addEventListener("click", () => this._setLang("sl"));
+    this.langIntBtn?.addEventListener("click", () => this._setLang("int"));
+    this.profileNewGameBtn?.addEventListener("click", () => {
+      if (!this.game) return;
+      const daily = this.game.dictionary?.getDailyAnswer() || this.game.dictionary?.getRandomAnswer();
+      if (daily) this.game.restart([daily]);
+      this.closeAuthModal();
     });
 
     // Create modal
@@ -416,7 +430,27 @@ export class UI {
 
   openAuthModal() {
     this.clearAuthError();
+    // Refresh profile stats
+    if (this.storage) {
+      const stats = this.storage.getStats();
+      const played = stats.played || 0;
+      const wins = stats.wins || 0;
+      const pct = played > 0 ? Math.round((wins / played) * 100) : 0;
+      if (this.profileStatsPlayed) this.profileStatsPlayed.textContent = played;
+      if (this.profileStatsWins) this.profileStatsWins.textContent = wins;
+      if (this.profileStatsPct) this.profileStatsPct.textContent = `${pct}%`;
+    }
+    // Sync active lang button
+    const lang = this.game?.keyboard?.lang || localStorage.getItem("besedko-lang") || "sl";
+    this.langSlBtn?.classList.toggle("active", lang === "sl");
+    this.langIntBtn?.classList.toggle("active", lang === "int");
     this.authModal?.classList.add("visible");
+  }
+
+  _setLang(lang) {
+    this.game?.keyboard?.setLang(lang);
+    this.langSlBtn?.classList.toggle("active", lang === "sl");
+    this.langIntBtn?.classList.toggle("active", lang === "int");
   }
 
   closeAuthModal() {
