@@ -1,5 +1,5 @@
-import { Multiplayer } from "./multiplayer.js?v=20260626-18";
-import { config } from "./config.js?v=20260626-18";
+import { Multiplayer } from "./multiplayer.js?v=20260626-19";
+import { config } from "./config.js?v=20260626-19";
 
 export class UI {
   constructor(storage) {
@@ -23,9 +23,12 @@ export class UI {
     this.keyboardActions = document.querySelector(".keyboard-actions");
     this.themeToggle = document.getElementById("theme-toggle");
     this.gameModeButtons = document.querySelectorAll(".game-mode-btn");
+    this.gameModeDesc = document.getElementById("game-mode-desc");
     this.gameTimerEl = document.getElementById("game-timer");
     this.gameTimerDisplay = document.getElementById("game-timer-display");
     this.gameTimerScore = document.getElementById("game-timer-score");
+    this.mpGamemodeBtns = document.querySelectorAll(".mp-gamemode-btn");
+    this.selectedGameMode = "classic";
     this.statsSummary = document.getElementById("stats-summary");
     this.roundSummary = document.getElementById("round-summary");
     this.dailyMode = document.getElementById("daily-mode");
@@ -176,6 +179,12 @@ export class UI {
     this._initTheme();
     this.gameModeButtons?.forEach((btn) => {
       btn.addEventListener("click", () => this.game?.setGameMode(btn.dataset.mode));
+    });
+    this.mpGamemodeBtns?.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        this.selectedGameMode = btn.dataset.mode;
+        this.mpGamemodeBtns.forEach((b) => b.classList.toggle("active", b === btn));
+      });
     });
 
     // Create modal
@@ -358,7 +367,10 @@ export class UI {
 
     this.game.topic = topic;
     this.game.rows = rows;
+    this.game.gameMode = this.selectedGameMode || "classic";
+    this.game.hardConstraints = { greens: {}, yellows: new Set() };
     this.game.restart([answer]);
+    this.setGameMode(this.game.gameMode);
     await this.game.multiplayer.createRoom();
   }
 
@@ -494,12 +506,26 @@ export class UI {
     return localStorage.getItem("besedko-hints") !== "false";
   }
 
+  static _modeInfo = {
+    classic:    { desc: "6 vrstic, ni omejitev ugibanja.", toast: "Klasičen način — 6 vrstic." },
+    hard:       { desc: "Vsako ugibanje mora vsebovati vse ugotovljene črke.", toast: "Težki način 🔥 — ugotovljene črke moraš uporabiti!" },
+    timeattack: { desc: "3 minute, reši čim več besed. Za vsako rešeno +10 sekund.", toast: "Časovni napad ⏱ — 3 minute, reši čim več besed!" },
+    zen:        { desc: "9 vrstic, brez poraza — igra se nadaljuje z novo besedo.", toast: "Zen način 🧘 — sprosti se, ni poraza." },
+  };
+
   setGameMode(mode) {
     this.gameModeButtons?.forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.mode === mode);
     });
+    const info = UI._modeInfo[mode] || UI._modeInfo.classic;
+    if (this.gameModeDesc) this.gameModeDesc.textContent = info.desc;
     const isTimeAttack = mode === "timeattack";
     if (this.gameTimerEl) this.gameTimerEl.hidden = !isTimeAttack;
+  }
+
+  showModeToast(mode) {
+    const info = UI._modeInfo[mode] || UI._modeInfo.classic;
+    this.showMessage(info.toast, "info", 3000);
   }
 
   updateTimer(seconds, score = 0) {

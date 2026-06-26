@@ -1,9 +1,9 @@
-import { Game } from "./game.js?v=20260626-18";
-import { Dictionary } from "./dictionary.js?v=20260626-18";
-import { Storage } from "./storage.js?v=20260626-18";
-import { UI } from "./ui.js?v=20260626-18";
-import { Multiplayer } from "./multiplayer.js?v=20260626-18";
-import { config } from "./config.js?v=20260626-18";
+import { Game } from "./game.js?v=20260626-19";
+import { Dictionary } from "./dictionary.js?v=20260626-19";
+import { Storage } from "./storage.js?v=20260626-19";
+import { UI } from "./ui.js?v=20260626-19";
+import { Multiplayer } from "./multiplayer.js?v=20260626-19";
+import { config } from "./config.js?v=20260626-19";
 import {
   onAuthChange,
   signInWithGoogle,
@@ -11,7 +11,7 @@ import {
   registerWithEmail,
   logout,
   friendlyAuthError,
-} from "./auth.js?v=20260626-18";
+} from "./auth.js?v=20260626-19";
 
 window.__besedkoInitStatus = "pending";
 window.__besedkoInitError = null;
@@ -77,6 +77,7 @@ async function init() {
     ui.setGame(game);
     ui.setMode(mode);
     ui.setGameMode(savedGameMode);
+    if (savedGameMode !== "classic") setTimeout(() => ui.showModeToast(savedGameMode), 600);
     if (savedGameMode === "timeattack") game.startTimer();
 
     // ─── Firebase Auth ───────────────────────────────────────────

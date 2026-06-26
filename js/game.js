@@ -1,5 +1,5 @@
 import { Board } from "./board.js?v=20260626-7";
-import { Keyboard } from "./keyboard.js?v=20260626-18";
+import { Keyboard } from "./keyboard.js?v=20260626-19";
 import { WordleEngine } from "./wordleEngine.js?v=20260626-7";
 import { Animations } from "./animations.js?v=20260626-7";
 
@@ -305,6 +305,7 @@ export class Game {
     this.restart([answer]);
     if (mode === "timeattack") this.startTimer();
     this.ui?.setGameMode(mode);
+    this.ui?.showModeToast(mode);
   }
 
   startTimer() {

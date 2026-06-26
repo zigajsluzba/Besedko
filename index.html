@@ -76,6 +76,7 @@
         <button class="game-mode-btn" data-mode="timeattack" type="button">⏱ Časovni</button>
         <button class="game-mode-btn" data-mode="zen" type="button">Zen 🧘</button>
       </div>
+      <p class="game-mode-desc" id="game-mode-desc"></p>
 
       <!-- Timer (time attack only) -->
       <div id="game-timer" class="game-timer" hidden>
@@ -154,6 +155,15 @@
               </div>
             </div>
           </div>
+            <div class="mp-setting-group">
+              <span class="mp-label">Način igre</span>
+              <div class="mp-length-buttons" role="group" aria-label="Način igre" id="mp-gamemode-btns">
+                <button class="mp-gamemode-btn active" data-mode="classic" type="button">Klasično</button>
+                <button class="mp-gamemode-btn" data-mode="hard" type="button">🔥 Težko</button>
+                <button class="mp-gamemode-btn" data-mode="timeattack" type="button">⏱ Čas</button>
+                <button class="mp-gamemode-btn" data-mode="zen" type="button">🧘 Zen</button>
+              </div>
+            </div>
           <button id="mp-modal-create-btn" class="secondary-button mp-modal-confirm-btn" type="button">Ustvari sobo →</button>
         </div>
       </div>
@@ -255,6 +265,6 @@
       </div>
     </div>
 
-    <script type="module" src="js/app.js?v=20260626-18"></script>
+    <script type="module" src="js/app.js?v=20260626-19"></script>
   </body>
 </html>
