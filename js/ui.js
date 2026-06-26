@@ -1,5 +1,5 @@
-import { Multiplayer } from "./multiplayer.js?v=20260626-17";
-import { config } from "./config.js?v=20260626-17";
+import { Multiplayer } from "./multiplayer.js?v=20260626-18";
+import { config } from "./config.js?v=20260626-18";
 
 export class UI {
   constructor(storage) {
@@ -21,6 +21,11 @@ export class UI {
     this.hintButton = document.getElementById("hint-button");
     this.hintsToggle = document.getElementById("hints-toggle");
     this.keyboardActions = document.querySelector(".keyboard-actions");
+    this.themeToggle = document.getElementById("theme-toggle");
+    this.gameModeButtons = document.querySelectorAll(".game-mode-btn");
+    this.gameTimerEl = document.getElementById("game-timer");
+    this.gameTimerDisplay = document.getElementById("game-timer-display");
+    this.gameTimerScore = document.getElementById("game-timer-score");
     this.statsSummary = document.getElementById("stats-summary");
     this.roundSummary = document.getElementById("round-summary");
     this.dailyMode = document.getElementById("daily-mode");
@@ -167,6 +172,11 @@ export class UI {
     });
     this.hintsToggle?.addEventListener("click", () => this._toggleHints());
     this._initHints();
+    this.themeToggle?.addEventListener("click", () => this._toggleTheme());
+    this._initTheme();
+    this.gameModeButtons?.forEach((btn) => {
+      btn.addEventListener("click", () => this.game?.setGameMode(btn.dataset.mode));
+    });
 
     // Create modal
     this.mpCreateClose?.addEventListener("click", () => this.closeCreateModal());
@@ -451,6 +461,9 @@ export class UI {
     // Sync hints toggle
     const hintsOn = this.hintsEnabled();
     this.hintsToggle?.setAttribute("aria-checked", hintsOn ? "true" : "false");
+    // Sync theme toggle
+    const isLight = document.documentElement.dataset.theme === "light";
+    this.themeToggle?.setAttribute("aria-checked", isLight ? "true" : "false");
     this.authModal?.classList.add("visible");
   }
 
@@ -479,6 +492,39 @@ export class UI {
 
   hintsEnabled() {
     return localStorage.getItem("besedko-hints") !== "false";
+  }
+
+  setGameMode(mode) {
+    this.gameModeButtons?.forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.mode === mode);
+    });
+    const isTimeAttack = mode === "timeattack";
+    if (this.gameTimerEl) this.gameTimerEl.hidden = !isTimeAttack;
+  }
+
+  updateTimer(seconds, score = 0) {
+    if (!this.gameTimerDisplay) return;
+    const m = Math.floor(Math.max(0, seconds) / 60);
+    const s = Math.max(0, seconds) % 60;
+    this.gameTimerDisplay.textContent = `${m}:${String(s).padStart(2, "0")}`;
+    if (this.gameTimerScore) this.gameTimerScore.innerHTML = `Besede: <strong>${score}</strong>`;
+    if (this.gameTimerEl) this.gameTimerEl.classList.toggle("warning", seconds <= 30 && seconds > 0);
+  }
+
+  _initTheme() {
+    const light = localStorage.getItem("besedko-theme") === "light";
+    this._applyTheme(light);
+  }
+
+  _toggleTheme() {
+    const isLight = document.documentElement.dataset.theme === "light";
+    this._applyTheme(!isLight);
+  }
+
+  _applyTheme(light) {
+    document.documentElement.dataset.theme = light ? "light" : "dark";
+    localStorage.setItem("besedko-theme", light ? "light" : "dark");
+    this.themeToggle?.setAttribute("aria-checked", light ? "true" : "false");
   }
 
   closeAuthModal() {

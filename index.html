@@ -69,6 +69,20 @@
         <div id="multiplayer-status" class="multiplayer-status" aria-live="polite"></div>
       </div>
 
+      <!-- Game mode strip -->
+      <div class="game-mode-strip" id="game-mode-strip">
+        <button class="game-mode-btn active" data-mode="classic" type="button">Klasično</button>
+        <button class="game-mode-btn" data-mode="hard" type="button">Težko 🔥</button>
+        <button class="game-mode-btn" data-mode="timeattack" type="button">⏱ Časovni</button>
+        <button class="game-mode-btn" data-mode="zen" type="button">Zen 🧘</button>
+      </div>
+
+      <!-- Timer (time attack only) -->
+      <div id="game-timer" class="game-timer" hidden>
+        <span id="game-timer-display">3:00</span>
+        <span class="game-timer-score">Besede: <strong id="game-timer-score">0</strong></span>
+      </div>
+
       <!-- Game boards -->
       <div class="boards-container" id="boards-container">
         <div class="board-wrapper" id="my-board-wrapper">
@@ -228,6 +242,12 @@
                 <span class="toggle-knob"></span>
               </button>
             </div>
+            <div class="auth-profile-setting">
+              <span class="mp-label">Svetla tema</span>
+              <button class="toggle-btn" id="theme-toggle" type="button" role="switch" aria-checked="false">
+                <span class="toggle-knob"></span>
+              </button>
+            </div>
             <button id="profile-new-game-btn" class="secondary-button" type="button">Nova igra ↺</button>
             <button id="auth-logout-btn" class="secondary-button auth-logout-btn" type="button">Odjavi se</button>
           </div>
@@ -235,6 +255,6 @@
       </div>
     </div>
 
-    <script type="module" src="js/app.js?v=20260626-17"></script>
+    <script type="module" src="js/app.js?v=20260626-18"></script>
   </body>
 </html>

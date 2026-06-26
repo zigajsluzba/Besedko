@@ -1,9 +1,9 @@
-import { Game } from "./game.js?v=20260626-17";
-import { Dictionary } from "./dictionary.js?v=20260626-17";
-import { Storage } from "./storage.js?v=20260626-17";
-import { UI } from "./ui.js?v=20260626-17";
-import { Multiplayer } from "./multiplayer.js?v=20260626-17";
-import { config } from "./config.js?v=20260626-17";
+import { Game } from "./game.js?v=20260626-18";
+import { Dictionary } from "./dictionary.js?v=20260626-18";
+import { Storage } from "./storage.js?v=20260626-18";
+import { UI } from "./ui.js?v=20260626-18";
+import { Multiplayer } from "./multiplayer.js?v=20260626-18";
+import { config } from "./config.js?v=20260626-18";
 import {
   onAuthChange,
   signInWithGoogle,
@@ -11,7 +11,7 @@ import {
   registerWithEmail,
   logout,
   friendlyAuthError,
-} from "./auth.js?v=20260626-17";
+} from "./auth.js?v=20260626-18";
 
 window.__besedkoInitStatus = "pending";
 window.__besedkoInitError = null;
@@ -61,9 +61,10 @@ async function init() {
       window.localStorage.getItem("besedko-mode") || "single"
     );
     const mode = String(storedMode || "single").toLowerCase();
+    const savedGameMode = localStorage.getItem("besedko-gamemode") || "classic";
     const dailyAnswer = dict.getDailyAnswer();
     const answers = dailyAnswer ? [dailyAnswer] : dict.getDailyAnswers(1);
-    const game = new Game(answers, dict, storage, ui, mode);
+    const game = new Game(answers, dict, storage, ui, mode, savedGameMode);
 
     if (mode === "multiplayer") {
       game.multiplayer = new Multiplayer({ game, ui, firebaseUrl: config.firebaseUrl });
@@ -75,6 +76,8 @@ async function init() {
 
     ui.setGame(game);
     ui.setMode(mode);
+    ui.setGameMode(savedGameMode);
+    if (savedGameMode === "timeattack") game.startTimer();
 
     // ─── Firebase Auth ───────────────────────────────────────────
     const authAvailable = config.firebaseApp?.apiKey &&
