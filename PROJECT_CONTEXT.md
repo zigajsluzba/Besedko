@@ -198,34 +198,33 @@ Never mix both.
 # Game Modes
 Current:
 
-Classic
+- Single Player
+- Multiplayer (room-based, same-origin via BroadcastChannel)
+- Daily mode label
 
 Planned:
 
-Daily
-
-Infinite
-
-Hard Mode
-
-Time Attack
-
-Zen
-
-Custom Length
+- Daily challenge refinement
+- True networked multiplayer
+- Custom themes / word categories
+- Custom length support
+- Hard Mode
+- Time Attack
+- Zen
 
 ---
 
 # Performance
 Target:
 
-Lighthouse 100
+- fast startup
+- low DOM churn
+- smooth animations
+- responsive UI
 
-No unnecessary DOM updates
+Current focus:
 
-Avoid layout thrashing
-
-Prefer CSS animations
+- keep the game lightweight while adding persistence and multiplayer state sync
 
 ---
 
@@ -239,6 +238,12 @@ Screen reader support
 High contrast mode
 
 Reduced motion support
+
+Current UI improvements:
+
+- multiplayer status messages
+- clear mode switching
+- hidden multiplayer panel in single-player mode
 
 ---
 
@@ -256,6 +261,35 @@ Phone
 Landscape
 
 Portrait
+
+Current implementation notes:
+
+- the app uses a compact single-column layout for the board and keyboard
+- multiplayer controls are integrated without blocking the core game UI
+
+---
+
+# Current Implementation Status
+
+Implemented so far:
+
+- core Wordle-style gameplay
+- board rendering and keyboard interaction
+- answer/dictionary word validation
+- basic stats tracking (played/wins)
+- hint system with one hint per game
+- centered hint popup that appears only when requested
+- expanded word lists in answers.json and dictionary.json
+
+Remaining work / next priorities:
+
+- Daily Challenge mode
+- richer statistics and history
+- improved animations and polish
+- accessibility refinements
+- PWA support
+- harder difficulty modes and custom options
+- broader word set and better Slovenian language coverage
 
 ---
 
@@ -353,3 +387,26 @@ API-driven daily words
 Plugin architecture
 
 The project should be suitable for public GitHub release.
+
+---
+
+## Current Progress
+
+- **Implemented:**
+	- Basic UI scaffolding: `index.html`, board (`#board`) and keyboard (`#keyboard`) sections, and `css/main.css`.
+	- App entry: `js/app.js` initializes the `Game` on DOMContentLoaded.
+	- Game core: `js/game.js` implements the main game loop (letter input, delete, submit, row progression).
+	- Rendering: `js/board.js` creates the tile grid and provides tile setters/getters and row shake.
+	- Input: `js/keyboard.js` creates an on-screen keyboard and keyboard event handling.
+	- Engine: `js/wordleEngine.js` implements full Wordle evaluation (correct/present/absent with proper counts).
+	- Animations: `js/animations.js` provides `flipTile` and `shakeTiles` helpers used by the `Board`.
+
+- **Stubs / Missing / Next:**
+	- `js/dictionary.js` is implemented; it loads `words/answers.json` and `words/dictionary.json`.
+	- `js/storage.js` is implemented; simple `localStorage` wrapper and stats helpers added.
+	- `js/utils.js` is empty; shared helpers may be added as needed.
+	- `words/` directory is empty; wordlists for answers and allowed guesses are required.
+	- UI polish: accessibility attributes, ARIA labels, and responsive tweaks to reach mobile-first goals.
+	- Features: Daily mode, statistics, settings, PWA support, and additional game modes are planned.
+
+This file will be kept up-to-date as tasks are completed.

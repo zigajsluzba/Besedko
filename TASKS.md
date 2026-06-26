@@ -1,2 +1,3 @@
-- [ ] MVP
+- [x] MVP: core gameplay, board, keyboard, engine
 - [ ] Daily Challenge
+- [ ] Statistics (basic wins/played)

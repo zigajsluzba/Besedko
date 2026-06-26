@@ -8,14 +8,46 @@
   </head>
   <body>
     <header class="header">
-      <button class="icon-button">?</button>
+      <button class="icon-button" id="help-button" aria-label="Pomoč">?</button>
       <h1>Besedko+</h1>
-      <button class="icon-button">📊</button>
+      <div class="header-actions">
+        <div class="mode-switch" role="group" aria-label="Način igre">
+          <button class="mode-button active" id="mode-single" type="button">Single</button>
+          <button class="mode-button" id="mode-multi" type="button">Multiplayer</button>
+        </div>
+        <div id="daily-mode" class="daily-mode" aria-live="polite">Daily</div>
+        <div id="stats-summary" class="stats-summary" aria-live="polite">0/0</div>
+        <div id="round-summary" class="round-summary" aria-live="polite">1/1</div>
+        <button class="icon-button" id="hint-button" aria-label="Namig">💡</button>
+        <button class="icon-button" id="new-game-button" aria-label="Nova igra">↺</button>
+        <button class="icon-button" id="stats-button" aria-label="Odpri statistiko">📊</button>
+      </div>
     </header>
     <main>
+      <div class="multiplayer-panel">
+        <button id="multiplayer-create" class="secondary-button" type="button">Ustvari sobo</button>
+        <button id="multiplayer-join" class="secondary-button" type="button">Pridruži se</button>
+        <button id="multiplayer-leave" class="secondary-button" type="button">Zapusti sobo</button>
+        <div id="room-code" class="room-code">Soba: -</div>
+        <div id="multiplayer-status" class="multiplayer-status">Izberi način igre.</div>
+      </div>
       <section id="board" class="board" tabindex="0"></section>
       <section id="keyboard" class="keyboard"></section>
+      <div id="message" class="message" aria-live="polite"></div>
     </main>
-    <script type="module" src="js/app.js"></script>
+
+    <div id="stats-modal" class="stats-modal" role="dialog" aria-modal="true" aria-labelledby="stats-title">
+      <div class="stats-panel">
+        <header class="stats-header">
+          <h2 id="stats-title">Statistika</h2>
+          <button id="stats-close" class="close-button" aria-label="Zapri statistiko">×</button>
+        </header>
+        <div class="stats-content">
+          <div class="stat-row"><span>Odigrane igre</span><strong id="stats-played">0</strong></div>
+          <div class="stat-row"><span>Zmaga</span><strong id="stats-wins">0</strong></div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="js/app.js?v=20260626-2"></script>
   </body>
 </html>

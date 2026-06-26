@@ -28,6 +28,45 @@ export class Board {
     }
     return out;
   }
+
+  getSnapshot() {
+    const snapshot = [];
+    for (let r = 0; r < this.rows; r++) {
+      const row = [];
+      for (let c = 0; c < this.cols; c++) {
+        const tile = document.getElementById(`tile-${r}-${c}`);
+        if (!tile) {
+          row.push({ letter: "", state: "" });
+          continue;
+        }
+        const state = ["correct", "present", "absent"].find((name) => tile.classList.contains(name)) || "";
+        row.push({ letter: tile.textContent || "", state });
+      }
+      snapshot.push(row);
+    }
+    return snapshot;
+  }
+
+  applySnapshot(snapshot) {
+    this.create();
+    const normalized = Array.isArray(snapshot) ? snapshot : [];
+    normalized.forEach((row, rowIndex) => {
+      (row || []).forEach((cell, colIndex) => {
+        if (!cell) return;
+        if (cell.letter) {
+          this.setTile(rowIndex, colIndex, cell.letter);
+        }
+        if (cell.state) {
+          const tile = document.getElementById(`tile-${rowIndex}-${colIndex}`);
+          if (tile) {
+            tile.classList.remove("correct", "present", "absent");
+            tile.classList.add(cell.state);
+          }
+        }
+      });
+    });
+  }
+
   shakeRow(r) {
     const tiles = [];
     for (let c = 0; c < this.cols; c++) {
