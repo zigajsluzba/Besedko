@@ -1,5 +1,5 @@
-import { Multiplayer } from "./multiplayer.js?v=20260626-8";
-import { config } from "./config.js?v=20260626-8";
+import { Multiplayer } from "./multiplayer.js?v=20260626-9";
+import { config } from "./config.js?v=20260626-9";
 
 export class UI {
   constructor(storage) {
@@ -29,16 +29,12 @@ export class UI {
     this.multiplayerPanel = document.querySelector(".multiplayer-panel");
     this.multiplayerStatusElement = document.getElementById("multiplayer-status");
 
-    // Pre-room elements
+    // Pre-room
     this.mpPreroom = document.getElementById("mp-preroom");
     this.createRoomButton = document.getElementById("multiplayer-create");
     this.joinRoomButton = document.getElementById("multiplayer-join");
-    this.mpSettings = document.getElementById("mp-settings");
-    this.mpTopicContainer = document.getElementById("mp-topic-buttons");
-    this.mpLengthButtons = document.querySelectorAll(".mp-length-btn");
-    this.mpRowsButtons = document.querySelectorAll(".mp-rows-btn");
 
-    // In-room elements
+    // In-room
     this.mpInroom = document.getElementById("mp-inroom");
     this.mpRoomCodeDisplay = document.getElementById("mp-room-code-display");
     this.mpMyName = document.getElementById("mp-my-name");
@@ -47,6 +43,22 @@ export class UI {
     this.mpConfirmText = document.getElementById("mp-confirm-text");
     this.mpConfirmYes = document.getElementById("mp-confirm-yes");
     this.mpConfirmNo = document.getElementById("mp-confirm-no");
+
+    // Create modal
+    this.mpCreateModal = document.getElementById("mp-create-modal");
+    this.mpCreateClose = document.getElementById("mp-create-close");
+    this.mpModalNickname = document.getElementById("mp-modal-nickname");
+    this.mpModalCreateBtn = document.getElementById("mp-modal-create-btn");
+    this.mpTopicContainer = document.getElementById("mp-topic-buttons");
+    this.mpLengthButtons = document.querySelectorAll(".mp-length-btn");
+    this.mpRowsButtons = document.querySelectorAll(".mp-rows-btn");
+
+    // Join modal
+    this.mpJoinModal = document.getElementById("mp-join-modal");
+    this.mpJoinClose = document.getElementById("mp-join-close");
+    this.mpJoinNickname = document.getElementById("mp-join-nickname");
+    this.mpJoinCode = document.getElementById("mp-join-code");
+    this.mpModalJoinBtn = document.getElementById("mp-modal-join-btn");
 
     // Opponent board
     this.opponentBoardWrapper = document.getElementById("opponent-board-wrapper");
@@ -88,21 +100,46 @@ export class UI {
     this.hintButton?.addEventListener("click", () => this.game && this.game.requestHint());
     this.modeSingleButton?.addEventListener("click", () => this.setMode("single"));
     this.modeMultiButton?.addEventListener("click", () => this.setMode("multiplayer"));
-    this.createRoomButton?.addEventListener("click", () => this.createMultiplayerRoom());
-    this.joinRoomButton?.addEventListener("click", () => this.joinMultiplayerRoom());
+
+    // Pre-room buttons → open modals
+    this.createRoomButton?.addEventListener("click", () => this.openCreateModal());
+    this.joinRoomButton?.addEventListener("click", () => this.openJoinModal());
+
+    // In-room
     this.leaveRoomButton?.addEventListener("click", () => this.leaveMultiplayerRoom());
     this.mpConfirmYes?.addEventListener("click", () => this.game?.multiplayer?.confirmGuest());
     this.mpConfirmNo?.addEventListener("click", () => this.game?.multiplayer?.rejectGuest());
 
-    // Word length buttons
+    // Create modal
+    this.mpCreateClose?.addEventListener("click", () => this.closeCreateModal());
+    this.mpCreateModal?.addEventListener("click", (e) => {
+      if (e.target === this.mpCreateModal) this.closeCreateModal();
+    });
+    this.mpModalCreateBtn?.addEventListener("click", () => this.confirmCreateRoom());
+    this.mpModalNickname?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") this.confirmCreateRoom();
+    });
+
+    // Join modal
+    this.mpJoinClose?.addEventListener("click", () => this.closeJoinModal());
+    this.mpJoinModal?.addEventListener("click", (e) => {
+      if (e.target === this.mpJoinModal) this.closeJoinModal();
+    });
+    this.mpModalJoinBtn?.addEventListener("click", () => this.confirmJoinRoom());
+    this.mpJoinCode?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") this.confirmJoinRoom();
+    });
+    this.mpJoinCode?.addEventListener("input", (e) => {
+      e.target.value = e.target.value.toUpperCase();
+    });
+
+    // Settings buttons (now inside create modal)
     this.mpLengthButtons.forEach((btn) => {
       btn.addEventListener("click", () => {
         this.selectedWordLength = parseInt(btn.dataset.length, 10) || 5;
         this.mpLengthButtons.forEach((b) => b.classList.toggle("active", b === btn));
       });
     });
-
-    // Rows buttons
     this.mpRowsButtons.forEach((btn) => {
       btn.addEventListener("click", () => {
         this.selectedRows = parseInt(btn.dataset.rows, 10) || 6;
@@ -172,28 +209,71 @@ export class UI {
     if (normalized === "single") {
       this.hideOpponentBoard();
       this.showMessage("Single mode je aktiven.", "info", 1800);
-    } else {
-      this.showMessage("Multiplayer je aktiven. Ustvari sobo ali se pridruži.", "info", 2800);
     }
   }
 
-  // --- Multiplayer room actions ---
+  // --- Create modal ---
 
-  async createMultiplayerRoom() {
+  openCreateModal() {
+    const previous = window.localStorage.getItem("besedko-nickname") || "";
+    if (this.mpModalNickname) {
+      this.mpModalNickname.value = previous || "Igralec";
+    }
+    this.mpCreateModal?.classList.add("visible");
+    setTimeout(() => this.mpModalNickname?.select(), 50);
+  }
+
+  closeCreateModal() {
+    this.mpCreateModal?.classList.remove("visible");
+  }
+
+  async confirmCreateRoom() {
+    const nickname = (this.mpModalNickname?.value || "").trim() || "Igralec";
+    window.localStorage.setItem("besedko-nickname", nickname);
+    this.closeCreateModal();
+    await this._doCreateRoom(nickname);
+  }
+
+  // --- Join modal ---
+
+  openJoinModal() {
+    const previous = window.localStorage.getItem("besedko-nickname") || "";
+    if (this.mpJoinNickname) this.mpJoinNickname.value = previous || "Igralec";
+    if (this.mpJoinCode) this.mpJoinCode.value = "";
+    this.mpJoinModal?.classList.add("visible");
+    setTimeout(() => this.mpJoinCode?.focus(), 80);
+  }
+
+  closeJoinModal() {
+    this.mpJoinModal?.classList.remove("visible");
+  }
+
+  async confirmJoinRoom() {
+    const nickname = (this.mpJoinNickname?.value || "").trim() || "Igralec";
+    const code = (this.mpJoinCode?.value || "").trim().toUpperCase();
+    if (!code) {
+      this.mpJoinCode?.focus();
+      return;
+    }
+    window.localStorage.setItem("besedko-nickname", nickname);
+    this.closeJoinModal();
+    await this._doJoinRoom(nickname, code);
+  }
+
+  // --- Internal room operations ---
+
+  async _doCreateRoom(nickname) {
     if (!this.game) return;
     if (!this.game.multiplayer) {
       this.game.multiplayer = new Multiplayer({
         game: this.game, ui: this, firebaseUrl: config.firebaseUrl,
       });
     }
-    const nickname = this.promptForNickname();
-    if (!nickname) return;
     this.game.multiplayer.setNickname(nickname);
 
     const topic = this.selectedTopic || "mešano";
     const wordLength = this.selectedWordLength || 5;
     const rows = this.selectedRows || 6;
-
     let answer = null;
     if (this.game.dictionary) {
       answer = this.game.dictionary.getRandomByTopic(topic, wordLength);
@@ -203,23 +283,18 @@ export class UI {
     this.game.topic = topic;
     this.game.rows = rows;
     this.game.restart([answer]);
-
     await this.game.multiplayer.createRoom();
   }
 
-  async joinMultiplayerRoom() {
+  async _doJoinRoom(nickname, code) {
     if (!this.game) return;
     if (!this.game.multiplayer) {
       this.game.multiplayer = new Multiplayer({
         game: this.game, ui: this, firebaseUrl: config.firebaseUrl,
       });
     }
-    const nickname = this.promptForNickname();
-    if (!nickname) return;
     this.game.multiplayer.setNickname(nickname);
-    const roomCode = window.prompt("Vnesi kodo sobe:");
-    if (!roomCode) return;
-    await this.game.multiplayer.joinRoom(roomCode);
+    await this.game.multiplayer.joinRoom(code);
   }
 
   leaveMultiplayerRoom() {
@@ -230,19 +305,8 @@ export class UI {
     this.game.multiplayer.leaveRoom();
   }
 
-  promptForNickname() {
-    const previous = window.localStorage.getItem("besedko-nickname") || "";
-    const value = window.prompt("Vnesi vzdevek:", previous || "Igralec");
-    if (value === null) return null;
-    const nickname = value.trim();
-    if (!nickname) return null;
-    window.localStorage.setItem("besedko-nickname", nickname);
-    return nickname;
-  }
-
   // --- Room state display ---
 
-  /** Toggle between pre-room and in-room views. */
   setRoomCode(code) {
     const inRoom = Boolean(code);
     if (this.mpPreroom) this.mpPreroom.hidden = inRoom;

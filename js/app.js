@@ -1,9 +1,9 @@
-import { Game } from "./game.js?v=20260626-8";
-import { Dictionary } from "./dictionary.js?v=20260626-8";
-import { Storage } from "./storage.js?v=20260626-8";
-import { UI } from "./ui.js?v=20260626-8";
-import { Multiplayer } from "./multiplayer.js?v=20260626-8";
-import { config } from "./config.js?v=20260626-8";
+import { Game } from "./game.js?v=20260626-9";
+import { Dictionary } from "./dictionary.js?v=20260626-9";
+import { Storage } from "./storage.js?v=20260626-9";
+import { UI } from "./ui.js?v=20260626-9";
+import { Multiplayer } from "./multiplayer.js?v=20260626-9";
+import { config } from "./config.js?v=20260626-9";
 
 window.__besedkoInitStatus = "pending";
 window.__besedkoInitError = null;

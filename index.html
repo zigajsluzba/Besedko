@@ -27,40 +27,15 @@
       <!-- Multiplayer panel (hidden in single mode) -->
       <div class="multiplayer-panel">
 
-        <!-- PRE-ROOM: shown when NOT in a room -->
+        <!-- PRE-ROOM: just two buttons -->
         <div id="mp-preroom">
           <div class="mp-actions">
             <button id="multiplayer-create" class="secondary-button" type="button">Ustvari sobo</button>
             <button id="multiplayer-join" class="secondary-button" type="button">Pridruži se</button>
           </div>
-          <div class="mp-settings" id="mp-settings">
-            <div class="mp-setting-group">
-              <span class="mp-label">Tema</span>
-              <div class="mp-topic-buttons" id="mp-topic-buttons" role="group" aria-label="Tema"></div>
-            </div>
-            <div class="mp-setting-group">
-              <span class="mp-label">Dolžina</span>
-              <div class="mp-length-buttons" role="group" aria-label="Dolžina besede">
-                <button class="mp-length-btn" data-length="4" type="button">4</button>
-                <button class="mp-length-btn active" data-length="5" type="button">5</button>
-                <button class="mp-length-btn" data-length="6" type="button">6</button>
-              </div>
-            </div>
-            <div class="mp-setting-group">
-              <span class="mp-label">Poskusi</span>
-              <div class="mp-length-buttons" role="group" aria-label="Število poskusov">
-                <button class="mp-rows-btn" data-rows="3" type="button">3</button>
-                <button class="mp-rows-btn" data-rows="4" type="button">4</button>
-                <button class="mp-rows-btn" data-rows="5" type="button">5</button>
-                <button class="mp-rows-btn active" data-rows="6" type="button">6</button>
-                <button class="mp-rows-btn" data-rows="7" type="button">7</button>
-                <button class="mp-rows-btn" data-rows="8" type="button">8</button>
-              </div>
-            </div>
-          </div>
         </div>
 
-        <!-- IN-ROOM: shown when actively in a room -->
+        <!-- IN-ROOM: room info + leave + confirm (confirm only shows on request) -->
         <div id="mp-inroom" hidden>
           <div class="mp-room-row">
             <div class="mp-room-cell">
@@ -73,7 +48,6 @@
             </div>
             <button id="multiplayer-leave" class="secondary-button mp-leave-btn" type="button">Zapusti ✕</button>
           </div>
-          <!-- Host confirmation: shown when a guest requests to join -->
           <div id="mp-confirm" class="mp-confirm" hidden>
             <span id="mp-confirm-text" class="mp-confirm-text">Nekdo želi vstopiti.</span>
             <div class="mp-confirm-btns">
@@ -83,11 +57,10 @@
           </div>
         </div>
 
-        <div id="multiplayer-status" class="multiplayer-status" aria-live="polite">Izberi način igre.</div>
-        <p class="mp-hint">Deluje med napravami (računalnik ↔ telefon) prek Firebase.</p>
+        <div id="multiplayer-status" class="multiplayer-status" aria-live="polite"></div>
       </div>
 
-      <!-- Game boards: my board + opponent board side by side in multiplayer -->
+      <!-- Game boards -->
       <div class="boards-container" id="boards-container">
         <div class="board-wrapper" id="my-board-wrapper">
           <div class="board-label" id="my-board-label">Jaz</div>
@@ -118,6 +91,69 @@
       </div>
     </div>
 
-    <script type="module" src="js/app.js?v=20260626-8"></script>
+    <!-- Create room modal -->
+    <div id="mp-create-modal" class="stats-modal" role="dialog" aria-modal="true" aria-labelledby="mp-create-title">
+      <div class="stats-panel mp-modal-panel">
+        <header class="stats-header">
+          <h2 id="mp-create-title">Ustvari sobo</h2>
+          <button id="mp-create-close" class="close-button" aria-label="Zapri">×</button>
+        </header>
+        <div class="mp-modal-body">
+          <div class="mp-modal-field">
+            <label class="mp-label" for="mp-modal-nickname">Vzdevek</label>
+            <input type="text" id="mp-modal-nickname" class="mp-text-input" placeholder="Igralec" maxlength="20" autocomplete="off" />
+          </div>
+          <div class="mp-settings" id="mp-settings">
+            <div class="mp-setting-group">
+              <span class="mp-label">Tema</span>
+              <div class="mp-topic-buttons" id="mp-topic-buttons" role="group" aria-label="Tema"></div>
+            </div>
+            <div class="mp-setting-group">
+              <span class="mp-label">Dolžina</span>
+              <div class="mp-length-buttons" role="group" aria-label="Dolžina besede">
+                <button class="mp-length-btn" data-length="4" type="button">4</button>
+                <button class="mp-length-btn active" data-length="5" type="button">5</button>
+                <button class="mp-length-btn" data-length="6" type="button">6</button>
+              </div>
+            </div>
+            <div class="mp-setting-group">
+              <span class="mp-label">Poskusi</span>
+              <div class="mp-length-buttons" role="group" aria-label="Število poskusov">
+                <button class="mp-rows-btn" data-rows="3" type="button">3</button>
+                <button class="mp-rows-btn" data-rows="4" type="button">4</button>
+                <button class="mp-rows-btn" data-rows="5" type="button">5</button>
+                <button class="mp-rows-btn active" data-rows="6" type="button">6</button>
+                <button class="mp-rows-btn" data-rows="7" type="button">7</button>
+                <button class="mp-rows-btn" data-rows="8" type="button">8</button>
+              </div>
+            </div>
+          </div>
+          <button id="mp-modal-create-btn" class="secondary-button mp-modal-confirm-btn" type="button">Ustvari sobo →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Join room modal -->
+    <div id="mp-join-modal" class="stats-modal" role="dialog" aria-modal="true" aria-labelledby="mp-join-title">
+      <div class="stats-panel mp-modal-panel">
+        <header class="stats-header">
+          <h2 id="mp-join-title">Pridruži se sobi</h2>
+          <button id="mp-join-close" class="close-button" aria-label="Zapri">×</button>
+        </header>
+        <div class="mp-modal-body">
+          <div class="mp-modal-field">
+            <label class="mp-label" for="mp-join-nickname">Vzdevek</label>
+            <input type="text" id="mp-join-nickname" class="mp-text-input" placeholder="Igralec" maxlength="20" autocomplete="off" />
+          </div>
+          <div class="mp-modal-field">
+            <label class="mp-label" for="mp-join-code">Koda sobe</label>
+            <input type="text" id="mp-join-code" class="mp-text-input mp-code-input" placeholder="XXXXX" maxlength="5" autocomplete="off" />
+          </div>
+          <button id="mp-modal-join-btn" class="secondary-button mp-modal-confirm-btn" type="button">Pridruži se →</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="js/app.js?v=20260626-9"></script>
   </body>
 </html>
