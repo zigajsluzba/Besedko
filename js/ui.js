@@ -1,5 +1,5 @@
-import { Multiplayer } from "./multiplayer.js?v=20260626-13";
-import { config } from "./config.js?v=20260626-13";
+import { Multiplayer } from "./multiplayer.js?v=20260626-14";
+import { config } from "./config.js?v=20260626-14";
 
 export class UI {
   constructor(storage) {
@@ -257,6 +257,7 @@ export class UI {
         if (daily) this.game.restart([daily]);
       }
     }
+
   }
 
   // --- Create modal ---
