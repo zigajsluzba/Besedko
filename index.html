@@ -8,12 +8,11 @@
   </head>
   <body>
     <header class="header">
-      <button class="icon-button" id="help-button" aria-label="Pomoč">?</button>
       <h1>Besedko+</h1>
       <div class="header-actions">
         <div class="mode-switch" role="group" aria-label="Način igre">
           <button class="mode-button active" id="mode-single" type="button">Single</button>
-          <button class="mode-button" id="mode-multi" type="button">Multiplayer</button>
+          <button class="mode-button" id="mode-multi" type="button">Multi</button>
         </div>
         <div id="daily-mode" class="daily-mode" aria-live="polite">Daily</div>
         <div id="stats-summary" class="stats-summary" aria-live="polite">0/0</div>
@@ -23,19 +22,56 @@
         <button class="icon-button" id="stats-button" aria-label="Odpri statistiko">📊</button>
       </div>
     </header>
+
     <main>
+      <!-- Multiplayer controls (hidden in single mode) -->
       <div class="multiplayer-panel">
-        <button id="multiplayer-create" class="secondary-button" type="button">Ustvari sobo</button>
-        <button id="multiplayer-join" class="secondary-button" type="button">Pridruži se</button>
-        <button id="multiplayer-leave" class="secondary-button" type="button">Zapusti sobo</button>
-        <div id="room-code" class="room-code">Soba: -</div>
-        <div id="multiplayer-status" class="multiplayer-status">Izberi način igre.</div>
+        <div class="mp-actions">
+          <button id="multiplayer-create" class="secondary-button" type="button">Ustvari sobo</button>
+          <button id="multiplayer-join" class="secondary-button" type="button">Pridruži se</button>
+          <button id="multiplayer-leave" class="secondary-button" type="button">Zapusti</button>
+          <div id="room-code" class="room-code">Soba: -</div>
+        </div>
+
+        <!-- Topic + word length settings (host picks before creating room; hidden once room is active) -->
+        <div class="mp-settings" id="mp-settings">
+          <div class="mp-setting-group">
+            <label class="mp-label" for="mp-topic-select">Tema</label>
+            <select id="mp-topic-select" class="mp-select">
+              <option value="mešano">Mešano</option>
+            </select>
+          </div>
+          <div class="mp-setting-group">
+            <label class="mp-label">Dolžina</label>
+            <div class="mp-length-buttons" role="group" aria-label="Dolžina besede">
+              <button class="mp-length-btn" data-length="4" type="button">4</button>
+              <button class="mp-length-btn active" data-length="5" type="button">5</button>
+              <button class="mp-length-btn" data-length="6" type="button">6</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="multiplayer-status" class="multiplayer-status" aria-live="polite">Izberi način igre.</div>
+        <p class="mp-hint">Oba zavihka morata biti v <strong>istem brskalniku</strong> (npr. oba Chrome ali oba Edge).</p>
       </div>
-      <section id="board" class="board" tabindex="0"></section>
-      <section id="keyboard" class="keyboard"></section>
-      <div id="message" class="message" aria-live="polite"></div>
+
+      <!-- Game boards: local + opponent side by side -->
+      <div class="boards-container" id="boards-container">
+        <div class="board-wrapper" id="my-board-wrapper">
+          <div class="board-label" id="my-board-label">Jaz</div>
+          <section id="board" class="board" tabindex="0" aria-label="Moja tabla"></section>
+        </div>
+        <div class="board-wrapper board-wrapper--opponent" id="opponent-board-wrapper" hidden>
+          <div class="board-label" id="opponent-label">Nasprotnik</div>
+          <section id="opponent-board" class="board board--opponent" aria-label="Nasprotnikova tabla"></section>
+        </div>
+      </div>
+
+      <section id="keyboard" class="keyboard" aria-label="Tipkovnica"></section>
+      <div id="message" class="message" aria-live="assertive" role="alert"></div>
     </main>
 
+    <!-- Stats modal -->
     <div id="stats-modal" class="stats-modal" role="dialog" aria-modal="true" aria-labelledby="stats-title">
       <div class="stats-panel">
         <header class="stats-header">
@@ -44,10 +80,12 @@
         </header>
         <div class="stats-content">
           <div class="stat-row"><span>Odigrane igre</span><strong id="stats-played">0</strong></div>
-          <div class="stat-row"><span>Zmaga</span><strong id="stats-wins">0</strong></div>
+          <div class="stat-row"><span>Zmage</span><strong id="stats-wins">0</strong></div>
         </div>
+        <button id="stats-new-game-button" class="secondary-button" type="button" style="margin-top:16px;width:100%">Nova igra</button>
       </div>
     </div>
-    <script type="module" src="js/app.js?v=20260626-2"></script>
+
+    <script type="module" src="js/app.js?v=20260626-6"></script>
   </body>
 </html>

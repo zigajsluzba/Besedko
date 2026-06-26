@@ -61,43 +61,19 @@ Each class should have ONE responsibility.
 
 Current architecture:
 
-Game
+Game → Board (local player)
+     → Board (opponent, multiplayer only)
+     → Keyboard
+     → WordleEngine
+     → Animations
 
-↓
+Dictionary — loads answers.json, dictionary.json, topics.json
 
-Board
+Storage — localStorage wrapper
 
-Keyboard
+Multiplayer — BroadcastChannel room protocol
 
-Dictionary
-
-Statistics
-
-Storage
-
-Animations
-
-Future:
-
-Game
-
-↓
-
-WordleEngine
-
-↓
-
-Board
-
-Keyboard
-
-Dictionary
-
-Storage
-
-Animations
-
-Statistics
+UI — DOM wiring, mode switching, stats, multiplayer panel
 
 UI should never contain game logic.
 
@@ -185,32 +161,62 @@ Separate files:
 
 answers.json
 
-Words that may become today's solution.
+Words that may become today's solution (5-letter default).
 
 dictionary.json
 
-Every allowed guess.
+Every allowed guess (5-letter default).
 
-Never mix both.
+topics.json
+
+Themed word lists per topic and word length (4/5/6 letters).
+Structure: { "topicKey": { "label": "...", "4": [...], "5": [...], "6": [...] } }
+
+Never mix both answer/dictionary lists.
 
 ---
 
 # Game Modes
 Current:
 
-- Single Player
-- Multiplayer (room-based, same-origin via BroadcastChannel)
+- Single Player (daily answer, 5 letters)
+- Multiplayer (room-based, same-origin via BroadcastChannel, two boards side-by-side)
 - Daily mode label
 
 Planned:
 
 - Daily challenge refinement
-- True networked multiplayer
-- Custom themes / word categories
-- Custom length support
+- True networked multiplayer (WebSocket/WebRTC)
 - Hard Mode
 - Time Attack
 - Zen
+
+---
+
+# Multiplayer Protocol (BroadcastChannel)
+Message types:
+
+- join-request  : guest → channel (after joinRoom(), retried up to 5× at 1.5s intervals)
+- game-config   : host → channel (sends answer + topic on join-request, clears retry timer)
+- board-update  : both → channel (color-only snapshot after each guess)
+- player-finished: both → channel (win/loss + guess count)
+- leave-room    : both → channel (on leaveRoom())
+
+Flow:
+1. Host creates room, picks topic + word length → restarts game with chosen word.
+2. Guest joins with room code → sends join-request (retried up to 5× at 1.5s intervals).
+3. Host receives join-request → sends game-config.
+4. Guest calls game.receiveGameConfig() → restarts with same word, clears retry timer.
+5. After each guess, sender broadcasts board-update (colors only, no letters).
+6. Receiver renders colors on opponent board via applySnapshotBlind().
+7. On game-over, sends player-finished.
+
+IMPORTANT: BroadcastChannel only works within the same browser on the same origin.
+Both tabs must be open in the same browser window/instance on the same URL.
+If join fails after all retries, status message tells user this.
+
+Session restore: roomId, isHost, nickname stored in localStorage under "besedko-mp".
+On reload in multiplayer mode, restoreSession() is called automatically.
 
 ---
 
@@ -243,7 +249,8 @@ Current UI improvements:
 
 - multiplayer status messages
 - clear mode switching
-- hidden multiplayer panel in single-player mode
+- opponent board hidden in single-player mode
+- aria-live regions for status and messages
 
 ---
 
@@ -264,32 +271,61 @@ Portrait
 
 Current implementation notes:
 
-- the app uses a compact single-column layout for the board and keyboard
-- multiplayer controls are integrated without blocking the core game UI
+- compact single-column layout for board and keyboard
+- multiplayer: two boards side-by-side on desktop, stacked vertically on mobile (<600px)
+- opponent board uses smaller tiles (38px vs 62px) and shows only colors
+- touch-action: manipulation on keys prevents 300ms tap delay
+- -webkit-tap-highlight-color: transparent removes tap highlight on iOS
 
 ---
 
 # Current Implementation Status
 
-Implemented so far:
+## Implemented:
 
-- core Wordle-style gameplay
-- board rendering and keyboard interaction
+- core Wordle-style gameplay (full algorithm: green pass first, yellow with counts)
+- board rendering via Board class (dynamic cols, tile array, no global IDs)
+- keyboard interaction (on-screen + physical, supports Č and Š)
 - answer/dictionary word validation
 - basic stats tracking (played/wins)
 - hint system with one hint per game
-- centered hint popup that appears only when requested
 - expanded word lists in answers.json and dictionary.json
+- multiplayer (BroadcastChannel, room-based):
+  - host creates room → picks topic + word length → picks word
+  - guest joins → receives game-config → restarts with same word
+  - both boards displayed side-by-side (opponent board: colors only)
+  - live sync after each guess via board-update messages
+  - player-finished notification (win/loss + guess count)
+- topic/theme selection in multiplayer: Mešano, Narava, Živali, Hrana, Dom
+- word length selection in multiplayer: 4, 5, or 6 letters
+- topics.json with thematic word lists per length
+- Dictionary.getTopics(), getAnswersByTopic(), getRandomByTopic()
+- mobile-first responsive layout (stacked boards on <600px)
 
-Remaining work / next priorities:
+## Keyboard:
+- Slovenian layout with Č, Š, Ž (all three diacritics present)
+- Key coloring: correct (green) > present (yellow) > absent (gray), priority-based
+- resetKeys() on new game/round clears all key colors
 
-- Daily Challenge mode
-- richer statistics and history
-- improved animations and polish
-- accessibility refinements
-- PWA support
-- harder difficulty modes and custom options
-- broader word set and better Slovenian language coverage
+## CSS design:
+- Dark theme with CSS custom properties (--bg, --correct, --present, --absent, etc.)
+- Board labels ("Jaz" / "Nasprotnik") hidden in single player via .board-label { display:none }
+- Shown only in multiplayer: main.mp-active .board-label { display:block }
+- Multiplayer panel is a card with mp-settings (hidden when room is active via hidden attribute)
+- Sticky glass-morphism header with backdrop-filter blur
+- Responsive: ≤640px stacks boards vertically; ≤380px hides minor header items
+
+## Remaining work / next priorities:
+
+- Custom modal instead of window.prompt() for nickname/room code entry
+- Daily Challenge mode (deterministic seed per day)
+- Richer statistics and history (win streaks, guess distribution)
+- Improved flip animations on opponent board  
+- Accessibility refinements (full keyboard nav in multiplayer panel)
+- PWA support (service worker, manifest)
+- Harder difficulty modes (hard mode: must use known letters)
+- Broader word sets and better Slovenian language coverage
+- Networked multiplayer (WebSocket/WebRTC for cross-device play)
 
 ---
 
@@ -305,6 +341,8 @@ current game
 daily streak
 
 achievements
+
+multiplayer session (room, host/guest, nickname)
 
 Never store unnecessary data.
 
@@ -361,6 +399,8 @@ If unsure:
 
 Ask before making architectural changes.
 
+Always update PROJECT_CONTEXT.md when features are added or changed.
+
 ---
 
 # Long-Term Vision
@@ -387,26 +427,3 @@ API-driven daily words
 Plugin architecture
 
 The project should be suitable for public GitHub release.
-
----
-
-## Current Progress
-
-- **Implemented:**
-	- Basic UI scaffolding: `index.html`, board (`#board`) and keyboard (`#keyboard`) sections, and `css/main.css`.
-	- App entry: `js/app.js` initializes the `Game` on DOMContentLoaded.
-	- Game core: `js/game.js` implements the main game loop (letter input, delete, submit, row progression).
-	- Rendering: `js/board.js` creates the tile grid and provides tile setters/getters and row shake.
-	- Input: `js/keyboard.js` creates an on-screen keyboard and keyboard event handling.
-	- Engine: `js/wordleEngine.js` implements full Wordle evaluation (correct/present/absent with proper counts).
-	- Animations: `js/animations.js` provides `flipTile` and `shakeTiles` helpers used by the `Board`.
-
-- **Stubs / Missing / Next:**
-	- `js/dictionary.js` is implemented; it loads `words/answers.json` and `words/dictionary.json`.
-	- `js/storage.js` is implemented; simple `localStorage` wrapper and stats helpers added.
-	- `js/utils.js` is empty; shared helpers may be added as needed.
-	- `words/` directory is empty; wordlists for answers and allowed guesses are required.
-	- UI polish: accessibility attributes, ARIA labels, and responsive tweaks to reach mobile-first goals.
-	- Features: Daily mode, statistics, settings, PWA support, and additional game modes are planned.
-
-This file will be kept up-to-date as tasks are completed.
