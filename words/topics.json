@@ -2,36 +2,146 @@
   "mešano": {
     "label": "Mešano",
     "icon": "🎲",
-    "4": ["VODA", "LUNA", "GORA", "MIZA", "RIBA", "NOGA", "ROKA", "KAČA", "VRBA", "KOLO", "NEBO", "PERO", "BRAT", "SOVA", "OREL", "VOLK", "REKA", "VINO", "PIVO", "MESO", "HIŠA", "MAMA", "TATA"],
-    "5": ["ČEBEL", "ROBOT", "SONCE", "PTICA", "GLAVA", "KAMEN", "MLEKO", "TRAVA", "STENA", "PISMO", "BREZA", "KRILA", "MESTO", "SADJE", "ZLATO", "SRECA", "DREVO", "MORJE", "VETAR", "HRANA", "STOLI", "TOPOL", "MIZAR", "MREZA", "KARTA", "KAMIK", "KOLES", "MALCA", "GRAJA", "RIBAR"],
-    "6": ["LETALO", "SESTRA", "PESNIK", "RIBNIK", "OBLAKI", "KMETJE", "TOPOLI", "KOSILO", "KNJIGA", "PISALO", "POTICA"]
+    "4": [
+      "VODA", "LUNA", "GORA", "MIZA", "RIBA", "NOGA", "ROKA", "KAČA", "VRBA",
+      "KOLO", "NEBO", "PERO", "BRAT", "SOVA", "OREL", "VOLK", "REKA", "VINO",
+      "PIVO", "MESO", "HIŠA", "MAMA", "TATA", "SNEG", "SLAP", "LIST", "ZRAK",
+      "CVET", "GRAD", "KRUH", "OKNO", "STOL", "SOBA", "KOST", "MOST", "KONJ",
+      "SRNA", "ŽABA", "PARK", "ŠOLA", "FILM", "DELO", "LETO", "SVET", "KRAJ",
+      "GLAS", "SILA", "MEJA", "GOZD", "TOČA", "ROSA", "JAMA", "OSEL", "SLON",
+      "KOZA", "KMET", "USTA", "DLAN", "PRST", "ČELO", "LUŽA", "JUHA", "ŽITO",
+      "OVES", "BROD", "MRAK", "PRAH", "VRAT"
+    ],
+    "5": [
+      "ČEBEL", "ROBOT", "SONCE", "PTICA", "GLAVA", "KAMEN", "MLEKO", "TRAVA",
+      "STENA", "PISMO", "BREZA", "KRILA", "MESTO", "SADJE", "ZLATO", "SRECA",
+      "DREVO", "MORJE", "VETAR", "HRANA", "TOPOL", "MREZA", "KARTA", "RIBAR",
+      "MESEC", "OBLAK", "DENAR", "OTROK", "ZMAGA", "VIHRA", "PESEM", "TORBA",
+      "ULICA", "JELEN", "VRANA", "LABOD", "KRAVA", "BORBA", "SENCA", "TABLA",
+      "ZAKON", "ŽIVAL", "ŽLICA", "SLIVA", "MEGLA", "HRAST", "POLJE", "KUHAR",
+      "KOVAČ", "VOJAK", "BAZEN", "CESTA", "NAROD", "PEKEL", "PLEME", "STVAR",
+      "TOREK", "TRATA", "MIŠKA", "ZAJEC", "BOBER", "GOLOB", "ANGEL", "BALON",
+      "JUNAK", "KLANC", "KONEC", "KORAK", "KOTEL", "KRONA", "LOVEC", "NOREC",
+      "OCEAN", "PAVZA", "PLAST", "PUŠKA", "SEVER", "ŠKODA", "STEZA", "PILOT",
+      "ŠOFER", "ŽUPAN", "PEVEC", "OVČAR", "REBRA", "BRADA", "BURJA", "SKALA",
+      "NJIVA", "BLATO", "BREST", "ŠUNKA", "TORTA", "SIRUP", "BUREK", "TENIS",
+      "HOKEJ", "TEKAČ", "DIRKA", "GOBAR", "NAROK", "VEDRO", "RENTA", "REVMA"
+    ],
+    "6": [
+      "LETALO", "SESTRA", "PESNIK", "RIBNIK", "OBLAKI", "KMETJE", "TOPOLI",
+      "KOSILO", "KNJIGA", "PISALO", "POTICA", "MEDVED", "DOLINA", "JEZERO",
+      "SMREKA", "SMUČAR", "SODNIK", "VRTNAR", "SLIKAR", "STEKLO", "KOLENO",
+      "TREBUH", "LISICA", "VRABEC", "PRAŠIČ", "SOLATA", "JAGODA", "SALAMA",
+      "KAVICA", "ŽGANCI", "MORNAR", "GOZDAR", "UČENEC", "MIŠICA", "KOBILA",
+      "DELFIN", "OHROVT", "FITNES", "PLEZAČ", "STRELC", "TRENER"
+    ]
   },
   "narava": {
     "label": "Narava",
     "icon": "🌿",
-    "4": ["LUNA", "GORA", "VRBA", "NEBO", "REKA", "VODA"],
-    "5": ["DREVO", "TRAVA", "BREZA", "SONCE", "MORJE", "TOPOL", "KAMEN", "VETAR", "PTICA"],
-    "6": ["OBLAKI", "TOPOLI", "RIBNIK"]
+    "4": [
+      "LUNA", "GORA", "VRBA", "NEBO", "REKA", "VODA", "SNEG", "SLAP", "LIST",
+      "ZRAK", "MRAK", "CVET", "BREG", "GOZD", "ROSA", "JAMA", "TOČA", "LUŽA",
+      "LOKA", "PRAH", "ŽITO", "SRNA", "SLON"
+    ],
+    "5": [
+      "DREVO", "TRAVA", "BREZA", "SONCE", "MORJE", "TOPOL", "KAMEN", "VETAR",
+      "PTICA", "SKALA", "NJIVA", "MEGLA", "BURJA", "PLIMA", "OBLAK", "BLATO",
+      "HRAST", "BREST", "VIHRA", "GORJE", "POLJE", "PELOD", "VZPON", "GABER",
+      "GOBAR"
+    ],
+    "6": [
+      "OBLAKI", "TOPOLI", "RIBNIK", "JEZERO", "SMREKA", "DOLINA", "RAVNIK"
+    ]
   },
   "živali": {
     "label": "Živali",
     "icon": "🐾",
-    "4": ["RIBA", "KAČA", "SOVA", "OREL", "VOLK"],
-    "5": ["PTICA", "ČEBEL", "MIZAR"],
-    "6": []
+    "4": [
+      "RIBA", "KAČA", "SOVA", "OREL", "VOLK", "KONJ", "SRNA", "ŽABA", "KRAP",
+      "KOZA", "RACA", "OSEL", "SLON", "GAMS", "OVEN"
+    ],
+    "5": [
+      "PTICA", "ČEBEL", "LABOD", "VRANA", "JELEN", "BOBER", "ZAJEC", "MIŠKA",
+      "KRAVA", "KOZEL", "GOLOB", "TIGER", "RAČKA", "SRAKA", "BIZON"
+    ],
+    "6": [
+      "MEDVED", "LISICA", "KOBILA", "PRAŠIČ", "DELFIN", "VRABEC", "ŽIRAFA"
+    ]
   },
   "hrana": {
     "label": "Hrana",
     "icon": "🍎",
-    "4": ["VINO", "PIVO", "MESO"],
-    "5": ["MLEKO", "HRANA", "SADJE", "MALCA"],
-    "6": ["KOSILO", "POTICA"]
+    "4": [
+      "VINO", "PIVO", "MESO", "KRUH", "JUHA", "ŽITO", "REPA", "FIGE", "OVES",
+      "AJDA", "MAST"
+    ],
+    "5": [
+      "MLEKO", "HRANA", "SADJE", "MALCA", "ŠUNKA", "TORTA", "SLIVA", "SIRUP",
+      "BUREK", "PECIV", "ČESEN", "KEFIR"
+    ],
+    "6": [
+      "KOSILO", "POTICA", "SOLATA", "JAGODA", "ŽGANCI", "OHROVT", "SALAMA",
+      "KAVICA", "JOGURT", "LIMONA", "REZANC"
+    ]
   },
   "dom": {
     "label": "Dom",
     "icon": "🏠",
-    "4": ["MIZA", "ROKA", "NOGA"],
-    "5": ["STOLI", "STENA", "KRILA", "PISMO", "MESTO"],
-    "6": ["PISALO", "KNJIGA"]
+    "4": [
+      "MIZA", "STOL", "OKNO", "SOBA", "HIŠA", "LOPA", "KAVČ"
+    ],
+    "5": [
+      "STOLI", "STENA", "VRATA", "OKRAS", "SVEČA", "PEČKA", "TABLA", "KLJUČ",
+      "PISMO"
+    ],
+    "6": [
+      "PISALO", "KNJIGA", "OKENCE", "STEKLO", "POSODA"
+    ]
+  },
+  "šport": {
+    "label": "Šport",
+    "icon": "🏅",
+    "4": [
+      "SMUK", "SKOK", "CILJ", "GOLI", "BOKS", "GOLF", "KROS", "ŽOGA", "DISK"
+    ],
+    "5": [
+      "TENIS", "HOKEJ", "JAHAČ", "TEKAČ", "LOPAR", "MREŽA", "ETAPA", "BAZEN",
+      "BORBA", "KORAK", "ZMAGA", "ZLATO", "DIRKA"
+    ],
+    "6": [
+      "SMUČAR", "PLEZAČ", "STRELC", "TEKAČI", "FITNES", "KOLESA", "NASKOK",
+      "TRENER", "FINALE"
+    ]
+  },
+  "poklici": {
+    "label": "Poklici",
+    "icon": "💼",
+    "4": [
+      "KMET"
+    ],
+    "5": [
+      "KUHAR", "ŠOFER", "PILOT", "ŽUPAN", "MIZAR", "RIBAR", "KOVAČ", "LOVEC",
+      "OVČAR", "VOJAK", "PEVEC", "REDAR", "PISAR", "TESAR"
+    ],
+    "6": [
+      "SODNIK", "VRTNAR", "SLIKAR", "MORNAR", "GOZDAR", "UČENEC", "PESNIK",
+      "ŽUPNIK"
+    ]
+  },
+  "telo": {
+    "label": "Telo",
+    "icon": "🦴",
+    "4": [
+      "NOGA", "ROKA", "DLAN", "ČELO", "KOLK", "HRBT", "KOŽA", "USTA", "PRST",
+      "LICE", "VRAT"
+    ],
+    "5": [
+      "GLAVA", "BRADA", "REBRA", "PLEČA", "ZOBJE", "UŠESA", "PRSTI", "SOLZE",
+      "LASJE", "SRČEK"
+    ],
+    "6": [
+      "TREBUH", "KOLENO", "MIŠICA", "RAMENA"
+    ]
   }
 }

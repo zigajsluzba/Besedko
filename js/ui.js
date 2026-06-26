@@ -1,5 +1,5 @@
-import { Multiplayer } from "./multiplayer.js?v=20260626-11";
-import { config } from "./config.js?v=20260626-11";
+import { Multiplayer } from "./multiplayer.js?v=20260626-12";
+import { config } from "./config.js?v=20260626-12";
 
 export class UI {
   constructor(storage) {
