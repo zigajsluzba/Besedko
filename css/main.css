@@ -292,6 +292,7 @@ main.mp-active .keyboard {
 .mp-length-buttons {
   display: flex;
   gap: 4px;
+  flex-wrap: wrap;
 }
 
 .mp-length-btn,
@@ -607,6 +608,12 @@ main.mp-active .board-label {
 .game-mode-btn.active[data-mode="hard"]        { background: #c9622e; color: #fff; border-color: #c9622e; }
 .game-mode-btn.active[data-mode="timeattack"]  { background: #c94040; color: #fff; border-color: #c94040; }
 .game-mode-btn.active[data-mode="zen"]         { background: #4a9e6e; color: #fff; border-color: #4a9e6e; }
+
+/* Hide riddle mode button in multiplayer; hide strip + desc + hints until room is active */
+main.mp-mode .game-mode-btn[data-mode="riddle"]  { display: none; }
+main.mp-mode:not(.mp-active) .game-mode-strip    { display: none; }
+main.mp-mode:not(.mp-active) .game-mode-desc     { display: none; }
+main.mp-mode:not(.mp-active) .keyboard-actions   { display: none; }
 
 .game-mode-desc {
   font-size: 0.76rem;

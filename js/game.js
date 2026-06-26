@@ -1,5 +1,5 @@
-import { Board } from "./board.js?v=20260626-7";
-import { Keyboard } from "./keyboard.js?v=20260626-20";
+﻿import { Board } from "./board.js?v=20260626-7";
+import { Keyboard } from "./keyboard.js?v=20260626-22";
 import { WordleEngine } from "./wordleEngine.js?v=20260626-7";
 import { Animations } from "./animations.js?v=20260626-7";
 
@@ -402,6 +402,7 @@ export class Game {
       rows: this.rows,
       topic: this.topic,
       gameMode: this.gameMode,
+      riddleData: this.currentRiddle || null,
     };
   }
 
@@ -423,6 +424,11 @@ export class Game {
     if (answers.length > 0) this.restart(answers);
     if (this.gameMode === "timeattack") this.startTimer();
     this.ui?.setGameMode(this.gameMode);
+    if (config.riddleData && this.gameMode === "riddle" && this.ui?.riddleGame) {
+      this.ui.riddleGame.start(config.riddleData);
+      this.ui._renderRiddleClues();
+      this.ui._updateRiddleNextBtn();
+    }
   }
 
   /** Apply opponent's board update (colors only) to the opponent board element. */

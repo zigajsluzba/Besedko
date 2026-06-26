@@ -1,5 +1,5 @@
-import { Multiplayer } from "./multiplayer.js?v=20260626-20";
-import { config } from "./config.js?v=20260626-20";
+﻿import { Multiplayer } from "./multiplayer.js?v=20260626-22";
+import { config } from "./config.js?v=20260626-22";
 
 export class UI {
   constructor(storage) {
@@ -368,8 +368,11 @@ export class UI {
     this.game.multiplayer.setNickname(nickname);
 
     const topic = this.selectedTopic || "mešano";
-    const wordLength = this.selectedWordLength || 5;
+    const gameMode = this.selectedGameMode || "classic";
     const rows = this.selectedRows || 6;
+    const wordLength = gameMode === "random"
+      ? [4, 5, 6][Math.floor(Math.random() * 3)]
+      : (this.selectedWordLength || 5);
     let answer = null;
     if (this.game.dictionary) {
       answer = this.game.dictionary.getRandomByTopic(topic, wordLength);
@@ -378,10 +381,13 @@ export class UI {
 
     this.game.topic = topic;
     this.game.rows = rows;
-    this.game.gameMode = this.selectedGameMode || "classic";
+    this.game.gameMode = gameMode;
     this.game.hardConstraints = { greens: {}, yellows: new Set() };
     this.game.restart([answer]);
-    this.setGameMode(this.game.gameMode);
+    this.setGameMode(gameMode);
+    if (gameMode === "riddle" && this.riddleGame?.current) {
+      this.game.currentRiddle = this.riddleGame.current;
+    }
     await this.game.multiplayer.createRoom();
   }
 
@@ -605,7 +611,10 @@ export class UI {
     } else if (this.riddleGame.failed) {
       this._showRiddleResult(`Odgovor je bil: ${this.riddleGame.current.answer}`, false);
     } else {
-      this._showRiddleResult("Napačno — poskusi znova ali razkrij namig.", false);
+      this._riddleReveal();
+      this._showRiddleResult("❌ Napačno!", false);
+      this.riddleInput.value = "";
+      setTimeout(() => { if (this.riddleResultEl) this.riddleResultEl.hidden = true; }, 2000);
       return;
     }
     if (this.riddleInput) this.riddleInput.disabled = true;
