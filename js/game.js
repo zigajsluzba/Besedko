@@ -299,6 +299,8 @@ export class Game {
     if (!this.storage) return false;
     const state = this.storage.get(this.persistKey, null);
     if (!state) return false;
+    // Don't restore a multiplayer game into single player or vice versa.
+    if (state.mode && state.mode !== this.mode) return false;
     this.mode = state.mode || this.mode;
     this.answers = this.normalizeAnswers(state.answers || this.answers);
     this.answer = (state.answer || this.answer || "").toUpperCase();

@@ -18,9 +18,9 @@ export class Dictionary {
     };
 
     const [answers, dictionary, topics] = await Promise.all([
-      loadJson("words/answers.json"),
-      loadJson("words/dictionary.json"),
-      loadJson("words/topics.json"),
+      loadJson("./words/answers.json"),
+      loadJson("./words/dictionary.json"),
+      loadJson("./words/topics.json"),
     ]);
 
     this.answers = (answers || []).map((w) => (w || "").toUpperCase());
