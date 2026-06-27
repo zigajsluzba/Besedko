@@ -60,6 +60,7 @@ export class UI {
     this.mpCreateModal = document.getElementById("mp-create-modal");
     this.mpCreateClose = document.getElementById("mp-create-close");
     this.mpModalNickname = document.getElementById("mp-modal-nickname");
+    this.mpModalPassword = document.getElementById("mp-modal-password");
     this.mpModalCreateBtn = document.getElementById("mp-modal-create-btn");
     this.mpTopicContainer = document.getElementById("mp-topic-buttons");
     this.mpLengthButtons = document.querySelectorAll(".mp-length-btn");
@@ -89,6 +90,8 @@ export class UI {
     this.mpJoinClose = document.getElementById("mp-join-close");
     this.mpJoinNickname = document.getElementById("mp-join-nickname");
     this.mpJoinCode = document.getElementById("mp-join-code");
+    this.mpJoinPassword = document.getElementById("mp-join-password");
+    this.mpJoinPasswordField = document.getElementById("mp-join-password-field");
     this.mpModalJoinBtn = document.getElementById("mp-modal-join-btn");
 
     // Auth
@@ -317,6 +320,12 @@ export class UI {
     this.mpModalNickname?.addEventListener("keydown", (e) => {
       if (e.key === "Enter") this.confirmCreateRoom();
     });
+    document.getElementById("mp-modal-gen-password")?.addEventListener("click", () => {
+      if (this.mpModalPassword) this.mpModalPassword.value = this._genLobbyPassword();
+    });
+    document.getElementById("mp-modal-clear-password")?.addEventListener("click", () => {
+      if (this.mpModalPassword) this.mpModalPassword.value = "";
+    });
 
     // Join modal
     this.mpJoinClose?.addEventListener("click", () => this.closeJoinModal());
@@ -496,11 +505,17 @@ export class UI {
 
   // --- Create modal ---
 
+  _genLobbyPassword() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    return Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+  }
+
   openCreateModal() {
     if (this.mpModalNickname && !this.mpModalNickname._userEdited) {
       const nick = this.storage?.getNickname() || window.localStorage.getItem("besedko-nickname") || "";
       this.mpModalNickname.value = nick || "Igralec";
     }
+    if (this.mpModalPassword) this.mpModalPassword.value = "";
     this.mpCreateModal?.classList.add("visible");
     this._syncNicknameToMP();
     setTimeout(() => this.mpModalNickname?.select(), 50);
@@ -512,9 +527,10 @@ export class UI {
 
   async confirmCreateRoom() {
     const nickname = (this.mpModalNickname?.value || "").trim() || "Igralec";
+    const password = (this.mpModalPassword?.value || "").trim();
     window.localStorage.setItem("besedko-nickname", nickname);
     this.closeCreateModal();
-    await this._doCreateRoom(nickname);
+    await this._doCreateRoom(nickname, password);
   }
 
   // --- Join modal ---
@@ -526,9 +542,19 @@ export class UI {
       joinNick.value = nick || "Igralec";
     }
     if (this.mpJoinCode) this.mpJoinCode.value = "";
+    if (this.mpJoinPassword) this.mpJoinPassword.value = "";
+    if (this.mpJoinPasswordField) this.mpJoinPasswordField.hidden = true;
     this.mpJoinModal?.classList.add("visible");
     this._syncNicknameToMP();
     setTimeout(() => this.mpJoinCode?.focus(), 80);
+  }
+
+  async _checkRoomPassword(code) {
+    try {
+      const res = await fetch(`${config.firebaseUrl}/rooms/${code}/password.json`);
+      if (!res.ok) return null;
+      return await res.json(); // null if no password, string if set
+    } catch { return null; }
   }
 
   closeJoinModal() {
@@ -538,10 +564,25 @@ export class UI {
   async confirmJoinRoom() {
     const nickname = (this.mpJoinNickname?.value || "").trim() || "Igralec";
     const code = (this.mpJoinCode?.value || "").trim().toUpperCase();
-    if (!code) {
-      this.mpJoinCode?.focus();
-      return;
+    if (!code) { this.mpJoinCode?.focus(); return; }
+
+    // If room has a password, validate before proceeding.
+    const roomPw = await this._checkRoomPassword(code);
+    if (roomPw) {
+      const entered = (this.mpJoinPassword?.value || "").trim();
+      if (!entered) {
+        // Show password field and ask user to enter it.
+        if (this.mpJoinPasswordField) this.mpJoinPasswordField.hidden = false;
+        this.mpJoinPassword?.focus();
+        return;
+      }
+      if (entered.toUpperCase() !== roomPw.toUpperCase()) {
+        if (this.mpJoinPasswordField) this.mpJoinPasswordField.hidden = false;
+        if (this.mpJoinPassword) { this.mpJoinPassword.value = ""; this.mpJoinPassword.placeholder = "Napačno geslo – poskusi znova"; this.mpJoinPassword.focus(); }
+        return;
+      }
     }
+
     window.localStorage.setItem("besedko-nickname", nickname);
     this.closeJoinModal();
     await this._doJoinRoom(nickname, code);
@@ -549,7 +590,7 @@ export class UI {
 
   // --- Internal room operations ---
 
-  async _doCreateRoom(nickname) {
+  async _doCreateRoom(nickname, password = "") {
     if (!this.game) return;
     if (!this.game.multiplayer) {
       this.game.multiplayer = new Multiplayer({
@@ -579,7 +620,7 @@ export class UI {
     if (gameMode === "riddle" && this.riddleGame?.current) {
       this.game.currentRiddle = this.riddleGame.current;
     }
-    await this.game.multiplayer.createRoom();
+    await this.game.multiplayer.createRoom(password || null);
   }
 
   async _doJoinRoom(nickname, code) {
@@ -730,6 +771,7 @@ export class UI {
           host: Object.values(r.players || {}).find(p => p.isHost)?.nickname || "?",
           topic: r.topic || "mešano",
           playerCount: Object.keys(r.players || {}).length,
+          locked: !!r.password,
         }));
       if (rooms.length === 0) { this.mpBrowserList.innerHTML = `<span class="mp-browser-empty">Ni odprtih sob.</span>`; return; }
       const topics = this.game?.dictionary?.getTopics() || [];
@@ -738,7 +780,7 @@ export class UI {
         const topicLabel = topicObj ? `${topicObj.icon ? topicObj.icon + " " : ""}${topicObj.label}` : r.topic;
         return `<div class="mp-browser-row">
           <div class="mp-browser-info">
-            <span class="mp-browser-host">👤 ${this._escHtml(r.host)}</span>
+            <span class="mp-browser-host">${r.locked ? "🔒" : "👤"} ${this._escHtml(r.host)}</span>
             <span class="mp-browser-meta">${this._escHtml(topicLabel)} · ${r.playerCount} ${r.playerCount === 1 ? "igralec" : "igralci"}</span>
           </div>
           <button class="secondary-button mp-browser-join-btn" data-code="${this._escHtml(r.code)}" type="button">Pridruži se →</button>

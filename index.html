@@ -274,6 +274,14 @@
                 <button class="mp-gamemode-btn" data-mode="reveal" type="button">👁 Razkrivanje</button>
               </div>
             </div>
+          <div class="mp-modal-field">
+            <label class="mp-label" for="mp-modal-password">Geslo <span class="mp-optional">(neobvezno)</span></label>
+            <div class="mp-password-row">
+              <input type="text" id="mp-modal-password" class="mp-text-input mp-password-input" placeholder="brez gesla" maxlength="12" autocomplete="off" />
+              <button type="button" id="mp-modal-gen-password" class="secondary-button mp-gen-btn" title="Generiraj geslo">🎲</button>
+              <button type="button" id="mp-modal-clear-password" class="secondary-button mp-gen-btn" title="Počisti geslo">✕</button>
+            </div>
+          </div>
           <button id="mp-modal-create-btn" class="secondary-button mp-modal-confirm-btn" type="button">Ustvari sobo →</button>
         </div>
       </div>
@@ -294,6 +302,10 @@
           <div class="mp-modal-field">
             <label class="mp-label" for="mp-join-code">Koda sobe</label>
             <input type="text" id="mp-join-code" class="mp-text-input mp-code-input" placeholder="XXXXX" maxlength="5" autocomplete="off" />
+          </div>
+          <div class="mp-modal-field" id="mp-join-password-field" hidden>
+            <label class="mp-label" for="mp-join-password">🔒 Geslo sobe</label>
+            <input type="text" id="mp-join-password" class="mp-text-input" placeholder="Vnesi geslo" maxlength="12" autocomplete="off" />
           </div>
           <button id="mp-modal-join-btn" class="secondary-button mp-modal-confirm-btn" type="button">Pridruži se →</button>
         </div>
@@ -405,6 +417,6 @@
       </div>
     </div>
 
-    <script type="module" src="js/app.js?v=20260627-16"></script>
+    <script type="module" src="js/app.js?v=20260627-17"></script>
   </body>
 </html>

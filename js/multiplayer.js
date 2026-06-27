@@ -42,7 +42,7 @@ export class Multiplayer {
 
   // ─── Room management ─────────────────────────────────────────────────────
 
-  async createRoom() {
+  async createRoom(password = null) {
     if (!this.available) return null;
     this.roomId = this._genRoomCode();
     this.isHost = true;
@@ -50,14 +50,16 @@ export class Multiplayer {
     this._resetLocalState();
     this.persistSession();
 
-    await this._fbSet(`rooms/${this.roomId}`, {
+    const roomData = {
       status: "waiting",
       topic: this.game.topic || "mešano",
       players: {
         [this.sessionId]: { nickname: this.nickname, isHost: true, joinedAt: Date.now(), avatar: this.game?.storage?.getAvatar() || "🎮" },
       },
       created_at: Date.now(),
-    });
+    };
+    if (password) roomData.password = password.toUpperCase();
+    await this._fbSet(`rooms/${this.roomId}`, roomData);
 
     this._startListening();
     this.ui?.setRoomCode(this.roomId);

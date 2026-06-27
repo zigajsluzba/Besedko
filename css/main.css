@@ -1405,6 +1405,16 @@ main.mp-mode:not(.mp-active) .game-live-stats { display: none; }
   border-color: var(--border-hi);
 }
 
+.mp-optional { font-size: 0.78rem; opacity: 0.55; font-weight: 400; }
+
+.mp-password-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.mp-password-row .mp-text-input { flex: 1; width: auto; }
+.mp-gen-btn { padding: 7px 10px; font-size: 0.95rem; flex-shrink: 0; }
+
 .mp-code-input {
   text-transform: uppercase;
   letter-spacing: 0.2em;
