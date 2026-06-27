@@ -76,6 +76,7 @@ export class UI {
     this.mpLobbyLinkInput = document.getElementById("mp-lobby-link-input");
     this.mpLobbyLinkCopy = document.getElementById("mp-lobby-link-copy");
     this._currentRoomCode = null;
+    this._currentRoomPassword = null;
 
     // Lobby browser
     this.mpBrowseBtn = document.getElementById("multiplayer-browse");
@@ -267,13 +268,19 @@ export class UI {
       setTimeout(() => { e.currentTarget.textContent = "📋 Kopiraj"; }, 2000);
     });
 
-    // Auto-open join modal when URL contains ?join=CODE
-    const joinParam = new URLSearchParams(location.search).get("join");
+    // Auto-open join modal when URL contains ?join=CODE&pw=PASSWORD
+    const urlParams = new URLSearchParams(location.search);
+    const joinParam = urlParams.get("join");
+    const pwParam   = urlParams.get("pw");
     if (joinParam) {
       history.replaceState(null, "", location.pathname);
       setTimeout(() => {
         this.openJoinModal();
         if (this.mpJoinCode) this.mpJoinCode.value = joinParam.toUpperCase();
+        if (pwParam && this.mpJoinPassword) {
+          this.mpJoinPassword.value = pwParam.toUpperCase();
+          if (this.mpJoinPasswordField) this.mpJoinPasswordField.hidden = false;
+        }
       }, 400);
     }
 
@@ -664,7 +671,16 @@ export class UI {
       this.hideMpRematch();
       this.hideMpHintBtn();
       if (this.mpRoomTopicDisplay) this.mpRoomTopicDisplay.textContent = "–";
+      this.setRoomPassword(null);
     }
+  }
+
+  setRoomPassword(pw) {
+    this._currentRoomPassword = pw || null;
+    const cell = document.getElementById("mp-room-password-cell");
+    const disp = document.getElementById("mp-room-password-display");
+    if (cell) cell.hidden = !pw;
+    if (disp) disp.textContent = pw || "–";
   }
 
   setRoomTopic(topicKey) {
@@ -743,10 +759,11 @@ export class UI {
       this.mpLobbyStartBtn.disabled = confirmedCount < 2;
     }
 
-    // Invite link: always shown while waiting
+    // Invite link: include password in URL if room is locked
     const linkArea = document.getElementById("mp-lobby-link");
     if (linkArea && this.mpLobbyLinkInput && this._currentRoomCode) {
-      const url = `${location.origin}${location.pathname}?join=${encodeURIComponent(this._currentRoomCode)}`;
+      let url = `${location.origin}${location.pathname}?join=${encodeURIComponent(this._currentRoomCode)}`;
+      if (this._currentRoomPassword) url += `&pw=${encodeURIComponent(this._currentRoomPassword)}`;
       this.mpLobbyLinkInput.value = url;
       linkArea.hidden = false;
     }

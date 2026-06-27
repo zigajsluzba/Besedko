@@ -64,6 +64,7 @@ export class Multiplayer {
     this._startListening();
     this.ui?.setRoomCode(this.roomId);
     this.ui?.setPlayerName(this.nickname);
+    if (password) this.ui?.setRoomPassword(password.toUpperCase());
     this.ui?.setMultiplayerStatus(`Soba ${this.roomId} je odprta. Pošlji link prijateljem!`);
     return this.roomId;
   }
