@@ -98,10 +98,14 @@ export class Dictionary {
 
   getDailyAnswer() {
     if (!this.loaded || this.answers.length === 0) return null;
-    const today = new Date().toISOString().slice(0, 10);
-    let seed = 0;
-    for (const char of today) seed += char.charCodeAt(0);
-    return this.answers[seed % this.answers.length];
+    // Days since epoch — use noon local time to avoid UTC-offset edge cases.
+    const epoch = new Date("2024-01-01T12:00:00").getTime();
+    const now   = new Date(); now.setHours(12, 0, 0, 0);
+    const day   = Math.floor((now.getTime() - epoch) / 86_400_000);
+    // xorshift32 for good pseudo-random distribution across the word list.
+    let h = (day + 1) >>> 0;
+    h ^= h << 13; h ^= h >>> 17; h ^= h << 5; h >>>= 0;
+    return this.answers[h % this.answers.length];
   }
 
   isValid(word) {
