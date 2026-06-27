@@ -1,5 +1,5 @@
-﻿import { Multiplayer } from "./multiplayer.js?v=20260627-02";
-import { config } from "./config.js?v=20260627-02";
+﻿import { Multiplayer } from "./multiplayer.js?v=20260627-03";
+import { config } from "./config.js?v=20260627-03";
 
 export class UI {
   constructor(storage) {
@@ -63,6 +63,11 @@ export class UI {
     this.mpTopicContainer = document.getElementById("mp-topic-buttons");
     this.mpLengthButtons = document.querySelectorAll(".mp-length-btn");
     this.mpRowsButtons = document.querySelectorAll(".mp-rows-btn");
+    this.mpCapacityBtns = document.querySelectorAll(".mp-capacity-btn");
+
+    // MP hint
+    this.mpHintArea = document.getElementById("mp-hint-area");
+    this.mpHintSendBtn = document.getElementById("mp-hint-send-btn");
 
     // Join modal
     this.mpJoinModal = document.getElementById("mp-join-modal");
@@ -99,10 +104,10 @@ export class UI {
     this.langIntBtn = document.getElementById("lang-int-btn");
     this.profileNewGameBtn = document.getElementById("profile-new-game-btn");
 
-    // Opponent board
-    this.opponentBoardWrapper = document.getElementById("opponent-board-wrapper");
-    this.opponentLabel = document.getElementById("opponent-label");
     this.mainElement = document.querySelector("main");
+    this._pendingConfirmSessionId = null;
+    this.selectedCapacity = 2;
+    this._riddleGuessCount = 0;
 
     // Riddle panel
     this.riddlePanel = document.getElementById("riddle-panel");
@@ -188,8 +193,17 @@ export class UI {
 
     // In-room
     this.leaveRoomButton?.addEventListener("click", () => this.leaveMultiplayerRoom());
-    this.mpConfirmYes?.addEventListener("click", () => this.game?.multiplayer?.confirmGuest());
-    this.mpConfirmNo?.addEventListener("click", () => this.game?.multiplayer?.rejectGuest());
+    this.mpConfirmYes?.addEventListener("click", () => {
+      const sid = this._pendingConfirmSessionId;
+      if (sid) this.game?.multiplayer?.confirmPlayer(sid);
+    });
+    this.mpConfirmNo?.addEventListener("click", () => {
+      const sid = this._pendingConfirmSessionId;
+      if (sid) this.game?.multiplayer?.rejectPlayer(sid);
+    });
+    this.mpHintSendBtn?.addEventListener("click", () => {
+      this.game?.multiplayer?.sendHint();
+    });
 
     // Auth
     this.authBtn?.addEventListener("click", () => this.openAuthModal());
@@ -265,6 +279,13 @@ export class UI {
       btn.addEventListener("click", () => {
         this.selectedRows = parseInt(btn.dataset.rows, 10) || 6;
         this.mpRowsButtons.forEach((b) => b.classList.toggle("active", b === btn));
+      });
+    });
+
+    this.mpCapacityBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        this.selectedCapacity = parseInt(btn.dataset.capacity, 10) || 2;
+        this.mpCapacityBtns.forEach((b) => b.classList.toggle("active", b === btn));
       });
     });
 
@@ -355,7 +376,7 @@ export class UI {
     }
 
     if (normalized === "single") {
-      this.hideOpponentBoard();
+      this.hideAllOpponentBoards();
       if (this.game && this.game.cols !== 5) {
         this.game.rows = 6;
         const daily = this.game.dictionary?.getDailyAnswer() || this.game.dictionary?.getRandomAnswer();
@@ -445,7 +466,7 @@ export class UI {
     if (gameMode === "riddle" && this.riddleGame?.current) {
       this.game.currentRiddle = this.riddleGame.current;
     }
-    await this.game.multiplayer.createRoom();
+    await this.game.multiplayer.createRoom(this.selectedCapacity || 2);
   }
 
   async _doJoinRoom(nickname, code) {
@@ -478,6 +499,7 @@ export class UI {
       this.hideConfirmDialog();
       this.hideMpEmojiPanel();
       this.hideMpRematch();
+      this.hideMpHintBtn();
       if (this.mpRoomTopicDisplay) this.mpRoomTopicDisplay.textContent = "–";
     }
   }
@@ -496,7 +518,8 @@ export class UI {
     if (this.mpMyName) this.mpMyName.textContent = name || "–";
   }
 
-  showConfirmDialog(nickname) {
+  showConfirmDialog(nickname, sessionId) {
+    this._pendingConfirmSessionId = sessionId || null;
     if (this.mpConfirmText) {
       this.mpConfirmText.textContent = `${nickname} želi vstopiti v sobo.`;
     }
@@ -505,23 +528,103 @@ export class UI {
 
   hideConfirmDialog() {
     if (this.mpConfirm) this.mpConfirm.hidden = true;
+    this._pendingConfirmSessionId = null;
   }
 
-  // --- Opponent board ---
+  // --- Opponent boards (dynamic) ---
 
-  showOpponentBoard() {
-    this.opponentBoardWrapper?.removeAttribute("hidden");
+  showOpponentBoard(sessionId, nickname) {
+    if (document.getElementById(`opp-wrapper-${sessionId}`)) {
+      // Already exists — just update label if needed
+      const label = document.getElementById(`opp-label-${sessionId}`);
+      if (label) label.textContent = nickname || "Nasprotnik";
+      return;
+    }
+    const wrapper = document.createElement("div");
+    wrapper.className = "board-wrapper board-wrapper--opponent";
+    wrapper.id = `opp-wrapper-${sessionId}`;
+
+    const label = document.createElement("div");
+    label.className = "board-label";
+    label.id = `opp-label-${sessionId}`;
+    label.textContent = nickname || "Nasprotnik";
+
+    const boardEl = document.createElement("section");
+    boardEl.id = `opp-board-${sessionId}`;
+    boardEl.className = "board board--opponent";
+    boardEl.setAttribute("aria-label", `${nickname || "Nasprotnik"}eva tabla`);
+
+    wrapper.appendChild(label);
+    wrapper.appendChild(boardEl);
+    this.boardsContainer?.appendChild(wrapper);
     this.mainElement?.classList.add("mp-active");
-    this.game?.initOpponentBoard();
+    this.game?.initOpponentBoard(sessionId, `opp-board-${sessionId}`);
   }
 
-  hideOpponentBoard() {
-    this.opponentBoardWrapper?.setAttribute("hidden", "");
+  hideOpponentBoard(sessionId) {
+    document.getElementById(`opp-wrapper-${sessionId}`)?.remove();
+    if (this.game) delete this.game.opponentBoards[sessionId];
+    if (!this.boardsContainer?.querySelector(".board-wrapper--opponent, .opp-riddle-card")) {
+      this.mainElement?.classList.remove("mp-active");
+    }
+  }
+
+  hideAllOpponentBoards() {
+    this.boardsContainer?.querySelectorAll(".board-wrapper--opponent, .opp-riddle-card")
+      .forEach(el => el.remove());
+    if (this.game) this.game.opponentBoards = {};
     this.mainElement?.classList.remove("mp-active");
   }
 
-  setOpponentNickname(name) {
-    if (this.opponentLabel) this.opponentLabel.textContent = name || "Nasprotnik";
+  // --- Riddle progress for opponent (#9) ---
+
+  showOpponentRiddleProgress(sessionId, nickname, clueCount, guessCount) {
+    let card = document.getElementById(`opp-wrapper-${sessionId}`);
+    if (!card) {
+      card = document.createElement("div");
+      card.className = "opp-riddle-card";
+      card.id = `opp-wrapper-${sessionId}`;
+      const label = document.createElement("div");
+      label.className = "board-label";
+      label.id = `opp-label-${sessionId}`;
+      label.textContent = nickname || "Nasprotnik";
+      const info = document.createElement("div");
+      info.className = "opp-riddle-info";
+      info.id = `opp-riddle-${sessionId}`;
+      card.appendChild(label);
+      card.appendChild(info);
+      this.boardsContainer?.appendChild(card);
+      this.mainElement?.classList.add("mp-active");
+    }
+    this.updateOpponentRiddleProgress(sessionId, nickname, clueCount, guessCount);
+  }
+
+  updateOpponentRiddleProgress(sessionId, nickname, clueCount, guessCount) {
+    const info = document.getElementById(`opp-riddle-${sessionId}`);
+    if (info) {
+      info.innerHTML =
+        `<span>💡 ${clueCount} namig${clueCount === 1 ? "" : "i"}</span>` +
+        `<span>🎯 ${guessCount} ugibanj</span>`;
+    }
+  }
+
+  // --- MP hint (#6) ---
+
+  showMpHintBtn() {
+    if (this.game?.gameMode === "riddle") return; // no greens in riddle mode
+    this.mpHintArea?.removeAttribute("hidden");
+  }
+
+  hideMpHintBtn() {
+    this.mpHintArea?.setAttribute("hidden", "");
+  }
+
+  showHintToast(letter, position, fromName) {
+    this.showMessage(
+      `💡 ${fromName}: ${position + 1}. črka je '${letter}'`,
+      "info",
+      5000
+    );
   }
 
   // --- MP emoji ---
@@ -754,6 +857,7 @@ export class UI {
   startRiddle(riddleData) {
     if (!this.riddleGame) return;
     this.riddleGame.start(riddleData || undefined);
+    this._riddleGuessCount = 0;
     if (this.game) this.game.gameStartTime = Date.now();
     this._renderRiddleClues();
     if (this.riddleResultEl) { this.riddleResultEl.hidden = true; this.riddleResultEl.className = "riddle-result"; }
@@ -820,6 +924,7 @@ export class UI {
     this._renderRiddleClues();
     this._updateRiddleNextBtn();
     this._updateLiveStats();
+    this.game?.multiplayer?.sendRiddleProgress(this.riddleGame.revealedCount, this._riddleGuessCount);
     if (this.riddleResultEl && !this.riddleGame.solved && !this.riddleGame.failed) {
       this.riddleResultEl.hidden = true;
     }
@@ -831,14 +936,25 @@ export class UI {
     if (!guess.trim()) return;
     const result = this.riddleGame.check(guess);
     if (!result) return;
+    this._riddleGuessCount++;
     if (result.correct) {
       const stars = "⭐".repeat(Math.max(1, result.score));
       const elapsed = this.game?.getElapsed() || "0:00";
       this._showRiddleResult(`Bravo! ${stars} (${this.riddleGame.revealedCount} namig${this.riddleGame.revealedCount === 1 ? "" : "i"} · ⏱ ${elapsed})`, true);
       this._stopLiveStats();
+      this.game?.multiplayer?.sendRiddleProgress(this.riddleGame.revealedCount, this._riddleGuessCount);
+      if (this.game?.mode === "multiplayer") {
+        this.game?.multiplayer?.sendPlayerFinished(true, this._riddleGuessCount, this.riddleGame.revealedCount);
+        this.showMpRematch();
+      }
     } else if (this.riddleGame.failed) {
       this._showRiddleResult(`Odgovor je bil: ${this.riddleGame.current.answer} · ⏱ ${this.game?.getElapsed() || "0:00"}`, false);
       this._stopLiveStats();
+      this.game?.multiplayer?.sendRiddleProgress(this.riddleGame.revealedCount, this._riddleGuessCount);
+      if (this.game?.mode === "multiplayer") {
+        this.game?.multiplayer?.sendPlayerFinished(false, this._riddleGuessCount, 0);
+        this.showMpRematch();
+      }
     } else {
       this._riddleReveal();
       this._showRiddleResult("❌ Napačno!", false);

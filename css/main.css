@@ -482,6 +482,44 @@ main.mp-active .keyboard {
   text-align: center;
 }
 
+/* ─── Opponent board sizing ──────────────────── */
+.board--opponent .tile {
+  width: 36px;
+  height: 36px;
+  font-size: 0.9rem;
+}
+
+/* ─── Riddle progress card (#9) ──────────────── */
+.opp-riddle-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  min-width: 110px;
+}
+.opp-riddle-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* ─── MP hint button (#6) ────────────────────── */
+.mp-hint-area {
+  display: flex;
+  justify-content: center;
+  padding: 2px 0 4px;
+}
+.mp-hint-btn {
+  font-size: 0.82rem;
+  padding: 4px 10px;
+}
+
 /* ─── Reveal mode bar ────────────────────────── */
 .reveal-bar {
   display: flex;

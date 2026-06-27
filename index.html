@@ -68,6 +68,10 @@
               <button id="mp-confirm-no" class="secondary-button mp-btn-no" type="button">✕ Zavrni</button>
             </div>
           </div>
+          <!-- Hint send -->
+          <div id="mp-hint-area" class="mp-hint-area" hidden>
+            <button id="mp-hint-send-btn" class="secondary-button mp-hint-btn" type="button">💡 Pošlji namig</button>
+          </div>
           <!-- Emoji panel -->
           <div id="mp-emoji-panel" class="mp-emoji-panel" hidden>
             <button class="mp-emoji-btn" data-emoji="😀" type="button">😀</button>
@@ -123,10 +127,7 @@
           <div class="board-label" id="my-board-label">Jaz</div>
           <section id="board" class="board" tabindex="0" aria-label="Moja tabla"></section>
         </div>
-        <div class="board-wrapper board-wrapper--opponent" id="opponent-board-wrapper" hidden>
-          <div class="board-label" id="opponent-label">Nasprotnik</div>
-          <section id="opponent-board" class="board board--opponent" aria-label="Nasprotnikova tabla"></section>
-        </div>
+        <!-- Opponent boards injected dynamically by ui.js -->
       </div>
 
       <section id="keyboard" class="keyboard" aria-label="Tipkovnica"></section>
@@ -211,6 +212,14 @@
               </div>
             </div>
           </div>
+            <div class="mp-setting-group">
+              <span class="mp-label">Število igralcev</span>
+              <div class="mp-length-buttons" role="group" aria-label="Število igralcev" id="mp-capacity-btns">
+                <button class="mp-capacity-btn active" data-capacity="2" type="button">2</button>
+                <button class="mp-capacity-btn" data-capacity="3" type="button">3</button>
+                <button class="mp-capacity-btn" data-capacity="4" type="button">4</button>
+              </div>
+            </div>
             <div class="mp-setting-group">
               <span class="mp-label">Način igre</span>
               <div class="mp-length-buttons" role="group" aria-label="Način igre" id="mp-gamemode-btns">
@@ -324,6 +333,6 @@
       </div>
     </div>
 
-    <script type="module" src="js/app.js?v=20260627-02"></script>
+    <script type="module" src="js/app.js?v=20260627-03"></script>
   </body>
 </html>

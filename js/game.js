@@ -1,7 +1,7 @@
-﻿import { Board } from "./board.js?v=20260627-02";
-import { Keyboard } from "./keyboard.js?v=20260627-02";
-import { WordleEngine } from "./wordleEngine.js?v=20260627-02";
-import { Animations } from "./animations.js?v=20260627-02";
+﻿import { Board } from "./board.js?v=20260627-03";
+import { Keyboard } from "./keyboard.js?v=20260627-03";
+import { WordleEngine } from "./wordleEngine.js?v=20260627-03";
+import { Animations } from "./animations.js?v=20260627-03";
 
 export class Game {
   /**
@@ -39,7 +39,7 @@ export class Game {
     this.timerInterval = null;
     this.timeAttackScore = 0;
     this.multiplayer = null;
-    this.opponentBoard = null;
+    this.opponentBoards = {};
     this.persistKey = "game-state";
     this.gameStartTime = Date.now();
     this.currentRiddle = null;
@@ -259,6 +259,9 @@ export class Game {
     this.gameStartTime = Date.now();
     this.bestGreenCount = 0;
     this._revealedPositions = new Set();
+    for (const b of Object.values(this.opponentBoards)) {
+      b.rows = this.rows; b.cols = this.cols; b.create();
+    }
     this.board.rows = this.rows;
     this.board.cols = this.cols;
     this.board.create();
@@ -422,18 +425,17 @@ export class Game {
 
   // --- Multiplayer ---
 
-  /** Initialize the opponent board element (called when peer connects). */
-  initOpponentBoard() {
-    const el = document.getElementById("opponent-board");
-    if (!el) return;
-    if (this.opponentBoard) {
-      if (this.opponentBoard.cols !== this.cols) {
-        this.opponentBoard.cols = this.cols;
-        this.opponentBoard.create();
+  /** Initialize an opponent board element by sessionId and DOM element ID. */
+  initOpponentBoard(sessionId, boardId) {
+    if (this.opponentBoards[sessionId]) {
+      const b = this.opponentBoards[sessionId];
+      if (b.rows !== this.rows || b.cols !== this.cols) {
+        b.rows = this.rows; b.cols = this.cols; b.create();
       }
       return;
     }
-    this.opponentBoard = new Board(this.rows, this.cols, null, "opponent-board");
+    if (!document.getElementById(boardId)) return;
+    this.opponentBoards[sessionId] = new Board(this.rows, this.cols, null, boardId);
   }
 
   /** Config sent by host to guest when guest joins. */
@@ -475,10 +477,26 @@ export class Game {
     }
   }
 
-  /** Apply opponent's board update (colors only) to the opponent board element. */
-  applyOpponentBoardUpdate(snapshot) {
-    if (!this.opponentBoard || !snapshot) return;
-    this.opponentBoard.applySnapshotBlind(snapshot);
+  /** Apply opponent's board update (colors only) to the matching opponent board. */
+  applyOpponentBoardUpdate(snapshot, sessionId) {
+    const board = this.opponentBoards[sessionId];
+    if (!board || !snapshot) return;
+    board.applySnapshotBlind(snapshot);
+  }
+
+  /** Return a random confirmed green {letter, position} from the current game. */
+  getRandomGreenHint() {
+    const greens = new Map();
+    for (const row of this.boardStates) {
+      if (!row) continue;
+      row.forEach((cell, i) => {
+        if (cell?.state === "correct" && !greens.has(i)) greens.set(i, this.answer[i]);
+      });
+    }
+    if (greens.size === 0) return null;
+    const entries = [...greens.entries()];
+    const [position, letter] = entries[Math.floor(Math.random() * entries.length)];
+    return { position, letter };
   }
 
   // --- State persistence ---
