@@ -457,6 +457,8 @@ export class UI {
       // Hide all game UI until the game actually starts (onMpGameStart will reveal it).
       if (this.revealBarEl) this.revealBarEl.hidden = true;
       if (this.riddlePanel) this.riddlePanel.hidden = true;
+      if (this.gameTimerEl) this.gameTimerEl.hidden = true;
+      if (this.liveStatsEl) this.liveStatsEl.hidden = true;
       const myBoard = document.getElementById("my-board-wrapper");
       if (myBoard) myBoard.style.display = "";
       const kb = document.getElementById("keyboard");
