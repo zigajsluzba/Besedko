@@ -19,6 +19,7 @@
         <div id="daily-mode" class="daily-mode" aria-live="polite">Daily</div>
         <div id="stats-summary" class="stats-summary" aria-live="polite">0/0</div>
         <div id="round-summary" class="round-summary" aria-live="polite">1/1</div>
+        <button class="icon-button" id="stats-button" aria-label="Statistika" title="Statistika">📊</button>
         <!-- Auth: shows login button when logged out, user chip when logged in -->
         <button class="icon-button auth-header-btn" id="auth-btn" aria-label="Prijava">👤</button>
         <button class="auth-user-chip" id="auth-user-chip" hidden aria-label="Profil">
@@ -122,7 +123,10 @@
         <button class="game-mode-btn" data-mode="reveal" type="button">👁 Razkrivanje</button>
       </div>
       <p class="game-mode-desc" id="game-mode-desc"></p>
-      <div id="reveal-bar" class="reveal-bar" hidden></div>
+      <div id="reveal-bar" class="reveal-bar" hidden>
+        <div id="reveal-tiles" class="reveal-tiles"></div>
+        <span id="reveal-countdown" class="reveal-countdown"></span>
+      </div>
 
       <!-- Timer (time attack only) -->
       <div id="game-timer" class="game-timer" hidden>
@@ -177,8 +181,28 @@
           <button id="stats-close" class="close-button" aria-label="Zapri statistiko">×</button>
         </header>
         <div class="stats-content">
-          <div class="stat-row"><span>Odigrane igre</span><strong id="stats-played">0</strong></div>
-          <div class="stat-row"><span>Zmage</span><strong id="stats-wins">0</strong></div>
+          <div class="stats-boxes">
+            <div class="stat-box"><strong id="stats-played">0</strong><span>Igre</span></div>
+            <div class="stat-box"><strong id="stats-wins">0</strong><span>Zmage</span></div>
+            <div class="stat-box"><strong id="stats-winrate">–</strong><span>Uspešnost</span></div>
+            <div class="stat-box"><strong id="stats-streak">0</strong><span>🔥 Niz</span></div>
+            <div class="stat-box"><strong id="stats-best-streak">0</strong><span>Rekord niz</span></div>
+          </div>
+
+          <div class="stats-section" id="stats-dist-section">
+            <h3 class="stats-section-title">Porazdelitev ugibanj</h3>
+            <div id="stats-guess-dist" class="stats-guess-dist"></div>
+          </div>
+
+          <div class="stats-section">
+            <h3 class="stats-section-title">Po načinu igre</h3>
+            <div id="stats-by-mode" class="stats-by-mode"></div>
+          </div>
+
+          <div class="stats-section">
+            <h3 class="stats-section-title">Po dolžini besede</h3>
+            <div id="stats-by-length" class="stats-by-length"></div>
+          </div>
         </div>
         <button id="stats-new-game-button" class="secondary-button" type="button" style="margin-top:16px;width:100%">Nova igra</button>
       </div>
@@ -352,6 +376,6 @@
       </div>
     </div>
 
-    <script type="module" src="js/app.js?v=20260627-07"></script>
+    <script type="module" src="js/app.js?v=20260627-09"></script>
   </body>
 </html>

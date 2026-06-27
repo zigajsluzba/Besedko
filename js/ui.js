@@ -1,5 +1,5 @@
-﻿import { Multiplayer } from "./multiplayer.js?v=20260627-07";
-import { config } from "./config.js?v=20260627-07";
+﻿import { Multiplayer } from "./multiplayer.js?v=20260627-09";
+import { config } from "./config.js?v=20260627-09";
 
 export class UI {
   constructor(storage) {
@@ -142,6 +142,7 @@ export class UI {
 
     // Reveal bar
     this.revealBarEl = document.getElementById("reveal-bar");
+    this._revealCountdownInterval = null;
 
     // MP mode display
     this.mpRoomModeDisplay = document.getElementById("mp-room-mode-display");
@@ -406,6 +407,12 @@ export class UI {
     }
     if (this.mainElement) {
       this.mainElement.classList.toggle("mp-mode", normalized === "multiplayer");
+    }
+
+    if (normalized === "multiplayer") {
+      if (this.revealBarEl) this.revealBarEl.hidden = true;
+      if (this.riddlePanel) this.riddlePanel.hidden = true;
+      if (this._revealCountdownInterval) { clearInterval(this._revealCountdownInterval); this._revealCountdownInterval = null; }
     }
 
     if (this.game) {
@@ -855,13 +862,34 @@ export class UI {
     if (!this.revealBarEl || !this.game) return;
     const answer = this.game.answer || "";
     const revealed = this.game._revealedPositions || new Set();
-    this.revealBarEl.innerHTML = "";
+
+    const tilesEl = document.getElementById("reveal-tiles") || this.revealBarEl;
+    tilesEl.innerHTML = "";
     [...answer].forEach((letter, i) => {
       const tile = document.createElement("div");
       tile.className = "reveal-tile" + (revealed.has(i) ? " revealed" : "");
       tile.textContent = revealed.has(i) ? letter : "";
-      this.revealBarEl.appendChild(tile);
+      tilesEl.appendChild(tile);
     });
+
+    // Start/restart countdown ticker
+    this._startRevealCountdown();
+  }
+
+  _startRevealCountdown() {
+    if (this._revealCountdownInterval) {
+      clearInterval(this._revealCountdownInterval);
+      this._revealCountdownInterval = null;
+    }
+    const el = document.getElementById("reveal-countdown");
+    if (!el) return;
+    const tick = () => {
+      if (!this.game?._revealNextAt) { el.textContent = ""; return; }
+      const secs = Math.max(0, Math.ceil((this.game._revealNextAt - Date.now()) / 1000));
+      el.textContent = secs > 0 ? `⏱ ${secs}s` : "";
+    };
+    tick();
+    this._revealCountdownInterval = setInterval(tick, 250);
   }
 
   // --- Tile swap (green letter swap) ---
@@ -1109,6 +1137,7 @@ export class UI {
       const elapsed = this.game?.getElapsed() || "0:00";
       this._showRiddleResult(`Bravo! ${stars} (${this.riddleGame.revealedCount} namig${this.riddleGame.revealedCount === 1 ? "" : "i"} · ⏱ ${elapsed})`, true);
       this._stopLiveStats();
+      this.game?.storage?.recordGame({ mode: "riddle", won: true, cluesUsed: this.riddleGame.revealedCount });
       this.game?.multiplayer?.sendRiddleProgress(this.riddleGame.revealedCount, this._riddleGuessCount);
       if (this.game?.mode === "multiplayer") {
         this.game?.multiplayer?.sendPlayerFinished(true, this._riddleGuessCount, this.riddleGame.revealedCount);
@@ -1117,6 +1146,7 @@ export class UI {
     } else if (this.riddleGame.failed) {
       this._showRiddleResult(`Odgovor je bil: ${this.riddleGame.current.answer} · ⏱ ${this.game?.getElapsed() || "0:00"}`, false);
       this._stopLiveStats();
+      this.game?.storage?.recordGame({ mode: "riddle", won: false });
       this.game?.multiplayer?.sendRiddleProgress(this.riddleGame.revealedCount, this._riddleGuessCount);
       if (this.game?.mode === "multiplayer") {
         this.game?.multiplayer?.sendPlayerFinished(false, this._riddleGuessCount, 0);
@@ -1280,6 +1310,73 @@ export class UI {
     const stats = this.storage.getStats();
     if (this.statsPlayed) this.statsPlayed.textContent = stats.played || 0;
     if (this.statsWins) this.statsWins.textContent = stats.wins || 0;
+
+    // Advanced stats
+    const adv = this.storage?.getStats() || {};
+    const played = adv.played || 0;
+    const wins = adv.wins || 0;
+    const pct = played > 0 ? Math.round((wins / played) * 100) : 0;
+
+    // Populate top stats boxes
+    const el = (id) => document.getElementById(id);
+    if (el("stats-winrate")) el("stats-winrate").textContent = pct + "%";
+    if (el("stats-streak")) el("stats-streak").textContent = adv.streak || 0;
+    if (el("stats-best-streak")) el("stats-best-streak").textContent = adv.bestStreak || 0;
+
+    // Guess distribution
+    const distSection = el("stats-dist-section");
+    const distEl = el("stats-guess-dist");
+    if (distEl) {
+      const dist = adv.guessDistribution || [];
+      const total = dist.reduce((a, b) => a + b, 0);
+      if (distSection) distSection.hidden = total === 0;
+      const max = Math.max(...dist, 1);
+      distEl.innerHTML = dist.map((n, i) => `
+        <div class="gd-row">
+          <span class="gd-label">${i + 1}</span>
+          <div class="gd-bar-wrap"><div class="gd-bar${n === Math.max(...dist) && n > 0 ? " gd-bar--best" : ""}" style="width:${Math.round((n/max)*100)}%">${n || ""}</div></div>
+        </div>`).join("");
+    }
+
+    // By mode
+    const modeEl = el("stats-by-mode");
+    if (modeEl && adv.byMode) {
+      const modeLabels = {
+        classic: "Klasično", hard: "🔥 Težko", timeattack: "⏱ Čas", zen: "🧘 Zen",
+        reveal: "👁 Razkrivanje", riddle: "🎭 Uganka", random: "🎲 Naključno", multiplayer: "👥 Multi"
+      };
+      modeEl.innerHTML = Object.entries(adv.byMode)
+        .filter(([, m]) => m.played > 0)
+        .sort((a, b) => b[1].played - a[1].played)
+        .map(([key, m]) => {
+          const label = modeLabels[key] || key;
+          const wr = m.wins != null && m.played > 0 ? Math.round((m.wins / m.played) * 100) + "%" : "—";
+          const extra = key === "timeattack"
+            ? `<span>Rekord: ${m.bestScore || 0}</span>`
+            : key === "riddle"
+            ? `<span>Pov. namigov: ${m.played > 0 && m.totalClues ? (m.totalClues / (m.wins||1)).toFixed(1) : "—"}</span>`
+            : m.totalGuesses
+            ? `<span>Pov. ugibanj: ${(m.totalGuesses / m.played).toFixed(1)}</span>`
+            : "";
+          return `<div class="mode-stat-card">
+            <div class="mode-stat-name">${label}</div>
+            <div class="mode-stat-row"><span>${m.played} iger</span>${m.wins != null ? `<span>${m.wins} zmag</span>` : ""}</div>
+            <div class="mode-stat-row"><span>${wr !== "—" ? "Win rate: " + wr : ""}</span>${extra}</div>
+          </div>`;
+        }).join("");
+    }
+
+    // By word length
+    const lenEl = el("stats-by-length");
+    if (lenEl && adv.byLength) {
+      lenEl.innerHTML = Object.entries(adv.byLength)
+        .sort((a, b) => Number(a[0]) - Number(b[0]))
+        .map(([len, l]) => {
+          const wr = l.played > 0 ? Math.round((l.wins / l.played) * 100) : 0;
+          return `<div class="len-stat-item"><span class="len-label">${len}⬜</span><span>${l.wins}/${l.played}</span><span class="len-wr">${wr}%</span></div>`;
+        }).join("");
+    }
+
     this.statsModal.classList.add("visible");
   }
 

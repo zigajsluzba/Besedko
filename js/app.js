@@ -1,10 +1,10 @@
-﻿import { Game } from "./game.js?v=20260627-07";
-import { Dictionary } from "./dictionary.js?v=20260627-07";
-import { Storage } from "./storage.js?v=20260627-07";
-import { UI } from "./ui.js?v=20260627-07";
-import { Multiplayer } from "./multiplayer.js?v=20260627-07";
-import { config } from "./config.js?v=20260627-07";
-import { RiddleGame } from "./riddleGame.js?v=20260627-07";
+﻿import { Game } from "./game.js?v=20260627-09";
+import { Dictionary } from "./dictionary.js?v=20260627-09";
+import { Storage } from "./storage.js?v=20260627-09";
+import { UI } from "./ui.js?v=20260627-09";
+import { Multiplayer } from "./multiplayer.js?v=20260627-09";
+import { config } from "./config.js?v=20260627-09";
+import { RiddleGame } from "./riddleGame.js?v=20260627-09";
 import {
   onAuthChange,
   signInWithGoogle,
@@ -12,7 +12,7 @@ import {
   registerWithEmail,
   logout,
   friendlyAuthError,
-} from "./auth.js?v=20260627-07";
+} from "./auth.js?v=20260627-09";
 
 window.__besedkoInitStatus = "pending";
 window.__besedkoInitError = null;
@@ -25,6 +25,7 @@ async function syncStats(user, storage, firebaseUrl) {
     const res = await fetch(`${firebaseUrl}/users/${user.uid}/stats.json`);
     const remote = res.ok ? await res.json() : null;
     const merged = {
+      ...localStats,
       played: Math.max(localStats.played || 0, remote?.played || 0),
       wins:   Math.max(localStats.wins   || 0, remote?.wins   || 0),
     };
@@ -66,7 +67,7 @@ async function init() {
 
     // Load riddles and wire riddle game
     try {
-      const riddleResp = await fetch("words/riddles.json?v=20260627-07");
+      const riddleResp = await fetch("words/riddles.json?v=20260627-09");
       if (riddleResp.ok) {
         const riddles = await riddleResp.json();
         const riddleGame = new RiddleGame(riddles);

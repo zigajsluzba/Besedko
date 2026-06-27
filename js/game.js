@@ -133,8 +133,7 @@ export class Game {
       this.timeAttackScore++;
       this.timerSeconds = Math.min(this.timerSeconds + 10, 180);
       this.ui?.updateTimer(this.timerSeconds, this.timeAttackScore);
-      this.storage?.incrementStat("wins");
-      this.storage?.incrementStat("played");
+      this.storage?.recordGame({ mode: "timeattack", won: true, taScore: this.timeAttackScore });
       this.updateHeaderStats();
       this.ui?.showMessage(`+10s — beseda rešena! (${this.timeAttackScore})`, "info", 1400);
       setTimeout(() => {
@@ -145,8 +144,7 @@ export class Game {
     }
 
     if (isWin) {
-      this.storage && this.storage.incrementStat("wins");
-      this.storage && this.storage.incrementStat("played");
+      this.storage?.recordGame({ mode: this.gameMode, wordLength: this.cols, won: true, guessCount: row + 1, isMultiplayer: this.mode === "multiplayer" });
       this.updateHeaderStats();
       if (this.roundIndex + 1 < this.answers.length) {
         this.ui && this.ui.showMessage(
@@ -174,7 +172,7 @@ export class Game {
     if (this.currentRow >= this.rows) {
       // Zen: auto-next word, no game over
       if (this.gameMode === "zen") {
-        this.storage?.incrementStat("played");
+        this.storage?.recordGame({ mode: "zen", won: false });
         this.ui?.showMessage(`Beseda je bila ${this.answer}. Naslednja...`, "error", 2600);
         setTimeout(() => {
           const next = this._randomLengthAnswer();
@@ -182,7 +180,7 @@ export class Game {
         }, 2800);
         return;
       }
-      this.storage && this.storage.incrementStat("played");
+      this.storage?.recordGame({ mode: this.gameMode, wordLength: this.cols, won: false, guessCount: this.rows, isMultiplayer: this.mode === "multiplayer" });
       if (this.roundIndex + 1 < this.answers.length) {
         const finishedAnswer = this.answer;
         this.ui && this.ui.showMessage(
@@ -347,6 +345,7 @@ export class Game {
   _startReveal() {
     this._stopReveal();
     this._revealedPositions = new Set();
+    this._revealNextAt = Date.now() + 5000;
     this.ui?._updateRevealBar();
     this._revealInterval = setInterval(() => {
       if (this.gameOver) { this._stopReveal(); return; }
@@ -355,12 +354,14 @@ export class Game {
       if (unrevealed.length === 0) { this._stopReveal(); return; }
       const pos = unrevealed[Math.floor(Math.random() * unrevealed.length)];
       this._revealedPositions.add(pos);
+      this._revealNextAt = Date.now() + 5000;
       this.ui?._updateRevealBar();
     }, 5000);
   }
 
   _stopReveal() {
     if (this._revealInterval) { clearInterval(this._revealInterval); this._revealInterval = null; }
+    this._revealNextAt = null;
     this._revealedPositions = new Set();
   }
 
@@ -389,7 +390,7 @@ export class Game {
   _handleTimerEnd() {
     this.gameOver = true;
     this.ui?.updateTimer(0, this.timeAttackScore);
-    this.storage?.incrementStat("played");
+    this.storage?.recordGame({ mode: "timeattack", won: false, taScore: this.timeAttackScore });
     this.updateHeaderStats();
     this.ui?.showMessage(
       `Čas je potekel! Rešil si ${this.timeAttackScore} ${this.timeAttackScore === 1 ? "besedo" : "besed"}.`,
