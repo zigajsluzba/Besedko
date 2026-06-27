@@ -1,5 +1,5 @@
-﻿import { Multiplayer } from "./multiplayer.js?v=20260627-03";
-import { config } from "./config.js?v=20260627-03";
+﻿import { Multiplayer } from "./multiplayer.js?v=20260627-07";
+import { config } from "./config.js?v=20260627-07";
 
 export class UI {
   constructor(storage) {
@@ -69,6 +69,20 @@ export class UI {
     this.mpHintArea = document.getElementById("mp-hint-area");
     this.mpHintSendBtn = document.getElementById("mp-hint-send-btn");
 
+    // MP lobby
+    this.mpLobbyStartBtn = document.getElementById("mp-lobby-start-btn");
+    this.mpLobbyLinkInput = document.getElementById("mp-lobby-link-input");
+    this.mpLobbyLinkCopy = document.getElementById("mp-lobby-link-copy");
+    this._currentRoomCode = null;
+
+    // Lobby browser
+    this.mpBrowseBtn = document.getElementById("multiplayer-browse");
+    this.mpLobbyBrowser = document.getElementById("mp-lobby-browser");
+    this.mpBrowserClose = document.getElementById("mp-browser-close");
+    this.mpBrowserList = document.getElementById("mp-browser-list");
+    this.mpBrowserRefresh = document.getElementById("mp-browser-refresh");
+    this._browserInterval = null;
+
     // Join modal
     this.mpJoinModal = document.getElementById("mp-join-modal");
     this.mpJoinClose = document.getElementById("mp-join-close");
@@ -106,7 +120,6 @@ export class UI {
 
     this.mainElement = document.querySelector("main");
     this._pendingConfirmSessionId = null;
-    this.selectedCapacity = 2;
     this._riddleGuessCount = 0;
 
     // Riddle panel
@@ -204,6 +217,49 @@ export class UI {
     this.mpHintSendBtn?.addEventListener("click", () => {
       this.game?.multiplayer?.sendHint();
     });
+    this.mpLobbyStartBtn?.addEventListener("click", () => {
+      this.game?.multiplayer?.startGameManual();
+    });
+
+    // Lobby browser
+    this.mpBrowseBtn?.addEventListener("click", () => this.openLobbyBrowser());
+    this.mpBrowserClose?.addEventListener("click", () => this.closeLobbyBrowser());
+    this.mpLobbyBrowser?.addEventListener("click", (e) => {
+      if (e.target === this.mpLobbyBrowser) this.closeLobbyBrowser();
+    });
+    this.mpBrowserRefresh?.addEventListener("click", () => this._loadBrowserRooms());
+
+    // Lobby slot actions (kick + inline confirm/reject) — delegated
+    document.getElementById("mp-lobby-slots")?.addEventListener("click", (e) => {
+      const kick = e.target.closest(".slot-kick-btn");
+      if (kick) { this.game?.multiplayer?.kickPlayer(kick.dataset.sid); return; }
+      const yes = e.target.closest(".slot-confirm-yes");
+      if (yes) { this.game?.multiplayer?.confirmPlayer(yes.dataset.sid); return; }
+      const no = e.target.closest(".slot-confirm-no");
+      if (no) { this.game?.multiplayer?.rejectPlayer(no.dataset.sid); return; }
+    });
+    this.mpLobbyLinkCopy?.addEventListener("click", async (e) => {
+      const val = this.mpLobbyLinkInput?.value;
+      if (!val) return;
+      try {
+        await navigator.clipboard.writeText(val);
+      } catch {
+        this.mpLobbyLinkInput?.select();
+        document.execCommand("copy");
+      }
+      e.currentTarget.textContent = "✓ Kopirano!";
+      setTimeout(() => { e.currentTarget.textContent = "📋 Kopiraj"; }, 2000);
+    });
+
+    // Auto-open join modal when URL contains ?join=CODE
+    const joinParam = new URLSearchParams(location.search).get("join");
+    if (joinParam) {
+      history.replaceState(null, "", location.pathname);
+      setTimeout(() => {
+        this.openJoinModal();
+        if (this.mpJoinCode) this.mpJoinCode.value = joinParam.toUpperCase();
+      }, 400);
+    }
 
     // Auth
     this.authBtn?.addEventListener("click", () => this.openAuthModal());
@@ -282,12 +338,6 @@ export class UI {
       });
     });
 
-    this.mpCapacityBtns.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        this.selectedCapacity = parseInt(btn.dataset.capacity, 10) || 2;
-        this.mpCapacityBtns.forEach((b) => b.classList.toggle("active", b === btn));
-      });
-    });
 
     // Emoji buttons
     this.mpEmojiPanel?.querySelectorAll(".mp-emoji-btn").forEach((btn) => {
@@ -466,7 +516,7 @@ export class UI {
     if (gameMode === "riddle" && this.riddleGame?.current) {
       this.game.currentRiddle = this.riddleGame.current;
     }
-    await this.game.multiplayer.createRoom(this.selectedCapacity || 2);
+    await this.game.multiplayer.createRoom();
   }
 
   async _doJoinRoom(nickname, code) {
@@ -491,6 +541,7 @@ export class UI {
   // --- Room state display ---
 
   setRoomCode(code) {
+    this._currentRoomCode = code || null;
     const inRoom = Boolean(code);
     if (this.mpPreroom) this.mpPreroom.hidden = inRoom;
     if (this.mpInroom) this.mpInroom.hidden = !inRoom;
@@ -529,6 +580,122 @@ export class UI {
   hideConfirmDialog() {
     if (this.mpConfirm) this.mpConfirm.hidden = true;
     this._pendingConfirmSessionId = null;
+  }
+
+  // --- Lobby ---
+
+  updateLobby(players, joinReqs, mySessionId, gameStarted) {
+    const lobby = document.getElementById("mp-lobby");
+    if (!lobby) return;
+    lobby.hidden = Boolean(gameStarted);
+    if (gameStarted) return;
+
+    const me = players[mySessionId];
+    const isHost = me?.isHost === true;
+
+    // Build ordered slot list: me first, then others by joinedAt, then pending, then 1 open slot
+    const others = Object.entries(players)
+      .filter(([sid]) => sid !== mySessionId)
+      .sort((a, b) => (a[1].joinedAt || 0) - (b[1].joinedAt || 0));
+    const pending = Object.entries(joinReqs || {})
+      .filter(([sid, r]) => r && !players[sid] && sid !== mySessionId);
+
+    const slots = [];
+    if (me) slots.push({ sid: mySessionId, player: me, isMe: true });
+    for (const [sid, p] of others) slots.push({ sid, player: p, isMe: false });
+    for (const [sid, r] of pending) slots.push({ sid, pending: true, nickname: r.nickname });
+    slots.push(null); // always one open slot at the end
+
+    const slotsEl = document.getElementById("mp-lobby-slots");
+    if (slotsEl) {
+      slotsEl.innerHTML = slots.map(s => {
+        if (!s) return `<div class="mp-player-slot"><span class="slot-icon">⏳</span><span class="slot-name">Čaka...</span></div>`;
+        if (s.pending) {
+          const btns = isHost
+            ? `<div class="slot-confirm-btns"><button class="slot-confirm-yes" data-sid="${s.sid}" type="button">✓</button><button class="slot-confirm-no" data-sid="${s.sid}" type="button">✕</button></div>`
+            : '<span class="slot-tag">čaka</span>';
+          return `<div class="mp-player-slot slot-pending"><span class="slot-icon">⌛</span><span class="slot-name">${this._escHtml(s.nickname)}</span>${btns}</div>`;
+        }
+        if (s.isMe) return `<div class="mp-player-slot slot-me"><span class="slot-icon">🙋</span><span class="slot-name">${this._escHtml(s.player.nickname)}</span><span class="slot-tag">jaz</span></div>`;
+        const tag = s.player.isHost ? '<span class="slot-tag">gostitelj</span>' : '';
+        const kickBtn = (isHost && !s.player.isHost)
+          ? `<button class="slot-kick-btn" data-sid="${s.sid}" title="Odstrani" type="button">✕</button>` : '';
+        return `<div class="mp-player-slot slot-filled">${kickBtn}<span class="slot-icon">👤</span><span class="slot-name">${this._escHtml(s.player.nickname)}</span>${tag}</div>`;
+      }).join("");
+    }
+
+    // Start button: only for host, enabled when ≥2 players confirmed
+    if (this.mpLobbyStartBtn) {
+      const confirmedCount = Object.keys(players).length;
+      this.mpLobbyStartBtn.hidden = !isHost;
+      this.mpLobbyStartBtn.disabled = confirmedCount < 2;
+    }
+
+    // Invite link: always shown while waiting
+    const linkArea = document.getElementById("mp-lobby-link");
+    if (linkArea && this.mpLobbyLinkInput && this._currentRoomCode) {
+      const url = `${location.origin}${location.pathname}?join=${encodeURIComponent(this._currentRoomCode)}`;
+      this.mpLobbyLinkInput.value = url;
+      linkArea.hidden = false;
+    }
+  }
+
+  // --- Lobby browser ---
+
+  openLobbyBrowser() {
+    this.mpLobbyBrowser?.classList.add("visible");
+    this._loadBrowserRooms();
+    this._browserInterval = setInterval(() => this._loadBrowserRooms(), 6000);
+  }
+
+  closeLobbyBrowser() {
+    this.mpLobbyBrowser?.classList.remove("visible");
+    if (this._browserInterval) { clearInterval(this._browserInterval); this._browserInterval = null; }
+  }
+
+  async _loadBrowserRooms() {
+    if (!this.mpBrowserList) return;
+    try {
+      const res = await fetch(`${config.firebaseUrl}/rooms.json`);
+      const all = res.ok ? await res.json() : null;
+      if (!all) { this.mpBrowserList.innerHTML = `<span class="mp-browser-empty">Ni odprtih sob.</span>`; return; }
+      const now = Date.now();
+      const rooms = Object.entries(all)
+        .filter(([, r]) => r?.status === "waiting" && (now - (r.created_at || 0)) < 86_400_000)
+        .map(([code, r]) => ({
+          code,
+          host: Object.values(r.players || {}).find(p => p.isHost)?.nickname || "?",
+          topic: r.topic || "mešano",
+          playerCount: Object.keys(r.players || {}).length,
+        }));
+      if (rooms.length === 0) { this.mpBrowserList.innerHTML = `<span class="mp-browser-empty">Ni odprtih sob.</span>`; return; }
+      const topics = this.game?.dictionary?.getTopics() || [];
+      this.mpBrowserList.innerHTML = rooms.map(r => {
+        const topicObj = topics.find(t => t.key === r.topic);
+        const topicLabel = topicObj ? `${topicObj.icon ? topicObj.icon + " " : ""}${topicObj.label}` : r.topic;
+        return `<div class="mp-browser-row">
+          <div class="mp-browser-info">
+            <span class="mp-browser-host">👤 ${this._escHtml(r.host)}</span>
+            <span class="mp-browser-meta">${this._escHtml(topicLabel)} · ${r.playerCount} ${r.playerCount === 1 ? "igralec" : "igralci"}</span>
+          </div>
+          <button class="secondary-button mp-browser-join-btn" data-code="${this._escHtml(r.code)}" type="button">Pridruži se →</button>
+        </div>`;
+      }).join("");
+      this.mpBrowserList.querySelectorAll(".mp-browser-join-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          this.closeLobbyBrowser();
+          this.openJoinModal();
+          if (this.mpJoinCode) this.mpJoinCode.value = btn.dataset.code;
+        });
+      });
+    } catch (e) {
+      this.mpBrowserList.innerHTML = `<span class="mp-browser-empty">Napaka pri nalaganju.</span>`;
+    }
+  }
+
+  _escHtml(str) {
+    return (str || "").replace(/[&<>"']/g,
+      c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
 
   // --- Opponent boards (dynamic) ---

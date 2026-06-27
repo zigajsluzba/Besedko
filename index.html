@@ -37,6 +37,7 @@
           <div class="mp-actions">
             <button id="multiplayer-create" class="secondary-button" type="button">Ustvari sobo</button>
             <button id="multiplayer-join" class="secondary-button" type="button">Pridruži se</button>
+            <button id="multiplayer-browse" class="secondary-button mp-browse-btn" type="button">🔍 Prebrskaj</button>
           </div>
         </div>
 
@@ -48,10 +49,6 @@
               <strong id="mp-room-code-display" class="mp-room-value">–</strong>
             </div>
             <div class="mp-room-cell">
-              <span class="mp-label">Vzdevek</span>
-              <strong id="mp-my-name" class="mp-room-value">–</strong>
-            </div>
-            <div class="mp-room-cell">
               <span class="mp-label">Tema</span>
               <strong id="mp-room-topic-display" class="mp-room-value">–</strong>
             </div>
@@ -59,7 +56,19 @@
               <span class="mp-label">Način</span>
               <strong id="mp-room-mode-display" class="mp-room-value">–</strong>
             </div>
+          </div>
+          <div class="mp-room-actions">
+            <span class="mp-my-name-inline">👤 <strong id="mp-my-name">–</strong></span>
             <button id="multiplayer-leave" class="secondary-button mp-leave-btn" type="button">Zapusti ✕</button>
+          </div>
+          <!-- Lobby: player slots + manual start -->
+          <div id="mp-lobby" class="mp-lobby">
+            <div id="mp-lobby-slots" class="mp-lobby-slots"></div>
+            <div id="mp-lobby-link" class="mp-lobby-link" hidden>
+              <input id="mp-lobby-link-input" class="mp-lobby-link-input" type="text" readonly>
+              <button id="mp-lobby-link-copy" class="secondary-button mp-lobby-link-copy" type="button">📋 Kopiraj</button>
+            </div>
+            <button id="mp-lobby-start-btn" class="secondary-button mp-lobby-start-btn" type="button" hidden>▶ Začni igro</button>
           </div>
           <div id="mp-confirm" class="mp-confirm" hidden>
             <span id="mp-confirm-text" class="mp-confirm-text">Nekdo želi vstopiti.</span>
@@ -213,14 +222,6 @@
             </div>
           </div>
             <div class="mp-setting-group">
-              <span class="mp-label">Število igralcev</span>
-              <div class="mp-length-buttons" role="group" aria-label="Število igralcev" id="mp-capacity-btns">
-                <button class="mp-capacity-btn active" data-capacity="2" type="button">2</button>
-                <button class="mp-capacity-btn" data-capacity="3" type="button">3</button>
-                <button class="mp-capacity-btn" data-capacity="4" type="button">4</button>
-              </div>
-            </div>
-            <div class="mp-setting-group">
               <span class="mp-label">Način igre</span>
               <div class="mp-length-buttons" role="group" aria-label="Način igre" id="mp-gamemode-btns">
                 <button class="mp-gamemode-btn active" data-mode="classic" type="button">Klasično</button>
@@ -254,6 +255,24 @@
             <input type="text" id="mp-join-code" class="mp-text-input mp-code-input" placeholder="XXXXX" maxlength="5" autocomplete="off" />
           </div>
           <button id="mp-modal-join-btn" class="secondary-button mp-modal-confirm-btn" type="button">Pridruži se →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lobby browser modal -->
+    <div id="mp-lobby-browser" class="stats-modal" role="dialog" aria-modal="true" aria-labelledby="mp-browser-title">
+      <div class="stats-panel mp-modal-panel mp-browser-panel">
+        <header class="stats-header">
+          <h2 id="mp-browser-title">Odprte sobe</h2>
+          <button id="mp-browser-close" class="close-button" aria-label="Zapri">×</button>
+        </header>
+        <div class="mp-browser-body">
+          <div id="mp-browser-list" class="mp-browser-list">
+            <span class="mp-browser-empty">Nalagam...</span>
+          </div>
+          <div class="mp-browser-footer">
+            <button id="mp-browser-refresh" class="secondary-button" type="button">🔄 Osveži</button>
+          </div>
         </div>
       </div>
     </div>
@@ -333,6 +352,6 @@
       </div>
     </div>
 
-    <script type="module" src="js/app.js?v=20260627-03"></script>
+    <script type="module" src="js/app.js?v=20260627-07"></script>
   </body>
 </html>

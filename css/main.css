@@ -384,6 +384,173 @@ main.mp-active .keyboard {
   background: rgba(255,60,60,0.18);
 }
 
+/* ─── Room actions row (vzdevek + zapusti) ───── */
+.mp-room-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 4px 0;
+  gap: 8px;
+}
+.mp-my-name-inline {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* ─── MP capacity buttons ─────────────────────── */
+.mp-capacity-btn {
+  padding: 4px 10px;
+  font-size: 0.82rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.mp-capacity-btn.active {
+  background: var(--border-hi);
+  border-color: var(--border-hi);
+  color: #fff;
+}
+
+/* ─── Lobby ───────────────────────────────────── */
+.mp-lobby {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 4px 4px;
+}
+.mp-lobby-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+.mp-player-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 76px;
+  padding: 10px 6px;
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
+  transition: border-color 0.25s, color 0.25s;
+}
+.mp-player-slot.slot-me {
+  border-style: solid;
+  border-color: var(--correct, #538d4e);
+  color: var(--text);
+}
+.mp-player-slot.slot-filled {
+  border-style: solid;
+  border-color: var(--border-hi, #b59f3b);
+  color: var(--text);
+}
+.mp-player-slot.slot-pending {
+  border-style: dashed;
+  border-color: var(--text-muted);
+  opacity: 0.75;
+}
+.mp-player-slot .slot-icon { font-size: 1.4rem; line-height: 1; }
+.mp-player-slot .slot-name {
+  font-weight: 600;
+  font-size: 0.75rem;
+  max-width: 68px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mp-player-slot .slot-tag { font-size: 0.65rem; opacity: 0.6; }
+/* ─── Inline confirm/reject buttons in slot ─── */
+.slot-confirm-btns {
+  display: flex;
+  gap: 4px;
+  margin-top: 2px;
+}
+.slot-confirm-yes, .slot-confirm-no {
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 26px;
+}
+.slot-confirm-yes { background: rgba(83,141,78,0.25); color: var(--correct, #538d4e); }
+.slot-confirm-yes:hover { background: rgba(83,141,78,0.45); }
+.slot-confirm-no { background: rgba(255,80,80,0.18); color: #ff8080; }
+.slot-confirm-no:hover { background: rgba(255,60,60,0.35); }
+
+/* ─── Kick button on slot ────────────────────── */
+.slot-kick-btn {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 18px;
+  height: 18px;
+  font-size: 0.65rem;
+  line-height: 18px;
+  text-align: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255,80,80,0.18);
+  color: #ff8080;
+  cursor: pointer;
+  padding: 0;
+}
+.slot-kick-btn:hover { background: rgba(255,60,60,0.35); }
+.mp-player-slot { position: relative; }
+
+/* ─── Lobby browser ──────────────────────────── */
+.mp-browser-panel { max-width: 400px; width: 90vw; }
+.mp-browser-body { display: flex; flex-direction: column; gap: 10px; padding: 12px 0 4px; }
+.mp-browser-list { display: flex; flex-direction: column; gap: 8px; min-height: 60px; max-height: 280px; overflow-y: auto; }
+.mp-browser-empty { text-align: center; color: var(--text-muted); font-size: 0.88rem; padding: 20px 0; }
+.mp-browser-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.mp-browser-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mp-browser-host { font-weight: 600; font-size: 0.88rem; }
+.mp-browser-meta { font-size: 0.75rem; color: var(--text-muted); }
+.mp-browser-join-btn { font-size: 0.8rem; padding: 4px 10px; white-space: nowrap; flex-shrink: 0; }
+.mp-browser-footer { display: flex; justify-content: center; padding-top: 4px; }
+.mp-browse-btn { font-size: 0.82rem; }
+
+/* ─── Lobby link ─────────────────────────────── */
+.mp-lobby-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 340px;
+}
+.mp-lobby-link-input {
+  flex: 1;
+  font-size: 0.72rem;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-3);
+  color: var(--text-muted);
+  min-width: 0;
+}
+.mp-lobby-link-copy { font-size: 0.78rem; padding: 4px 8px; white-space: nowrap; }
+.mp-lobby-start-btn { margin-top: 2px; }
+.mp-lobby-start-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
 /* Confirm dialog (host approves guest) */
 .mp-confirm {
   display: flex;

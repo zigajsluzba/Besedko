@@ -40,18 +40,17 @@ export class Multiplayer {
 
   // ─── Room management ─────────────────────────────────────────────────────
 
-  async createRoom(capacity = 2) {
+  async createRoom() {
     if (!this.available) return null;
     this.roomId = this._genRoomCode();
     this.isHost = true;
     this.peerConnected = false;
-    this.roomCapacity = capacity;
     this._resetLocalState();
     this.persistSession();
 
     await this._fbSet(`rooms/${this.roomId}`, {
-      capacity,
       status: "waiting",
+      topic: this.game.topic || "mešano",
       players: {
         [this.sessionId]: { nickname: this.nickname, isHost: true, joinedAt: Date.now() },
       },
@@ -61,8 +60,7 @@ export class Multiplayer {
     this._startListening();
     this.ui?.setRoomCode(this.roomId);
     this.ui?.setPlayerName(this.nickname);
-    const n = capacity - 1;
-    this.ui?.setMultiplayerStatus(`Soba ${this.roomId} čaka na ${n} ${n === 1 ? "gosta" : "gostov"}...`);
+    this.ui?.setMultiplayerStatus(`Soba ${this.roomId} je odprta. Pošlji link prijateljem!`);
     return this.roomId;
   }
 
@@ -79,10 +77,12 @@ export class Multiplayer {
     this.ui?.setPlayerName(this.nickname);
     this.ui?.setMultiplayerStatus("Zahteva za vstop poslana. Čakam na potrditev...");
 
-    await this._fbPatch(`rooms/${this.roomId}`, {
-      [`join_requests/${this.sessionId}`]: { nickname: this.nickname, at: Date.now() },
-      status: "confirming",
+    // Use direct paths — slash-keyed PATCH body sends flat keys in SSE
+    await this._fbSet(`rooms/${this.roomId}/join_requests/${this.sessionId}`, {
+      nickname: this.nickname, at: Date.now(),
     });
+    await this._fbPatch(`rooms/${this.roomId}`, { status: "confirming" });
+    this._joinRequestSent = true;
     return true;
   }
 
@@ -90,18 +90,15 @@ export class Multiplayer {
     const req = this.roomData?.join_requests?.[sessionId];
     if (!req) return;
     this._pendingRequests.delete(sessionId);
-    await this._fbPatch(`rooms/${this.roomId}`, {
-      [`players/${sessionId}`]: { nickname: req.nickname, isHost: false, joinedAt: Date.now() },
-      [`join_requests/${sessionId}`]: null,
-    });
+    await this._fbSet(`rooms/${this.roomId}/players/${sessionId}`,
+      { nickname: req.nickname, isHost: false, joinedAt: Date.now() });
+    await this._fbDelete(`rooms/${this.roomId}/join_requests/${sessionId}`);
     this.ui?.hideConfirmDialog();
   }
 
   async rejectPlayer(sessionId) {
     this._pendingRequests.delete(sessionId);
-    await this._fbPatch(`rooms/${this.roomId}`, {
-      [`join_requests/${sessionId}`]: null,
-    });
+    await this._fbDelete(`rooms/${this.roomId}/join_requests/${sessionId}`);
     this.ui?.hideConfirmDialog();
   }
 
@@ -111,10 +108,8 @@ export class Multiplayer {
       if (this.isHost) {
         await this._fbDelete(`rooms/${this.roomId}`);
       } else {
-        await this._fbPatch(`rooms/${this.roomId}`, {
-          [`players/${this.sessionId}`]: null,
-          [`join_requests/${this.sessionId}`]: null,
-        });
+        await this._fbDelete(`rooms/${this.roomId}/players/${this.sessionId}`);
+        await this._fbDelete(`rooms/${this.roomId}/join_requests/${this.sessionId}`);
       }
     }
     this._resetLocalState();
@@ -130,12 +125,52 @@ export class Multiplayer {
     this.ui?.hideMpHintBtn();
   }
 
+  async kickPlayer(sessionId) {
+    if (!this.isHost || !this.roomId) return;
+    await this._fbDelete(`rooms/${this.roomId}/players/${sessionId}`);
+  }
+
+  _handleKicked() {
+    this._stopListening();
+    this.clearSession();
+    this._inRoom = false;
+    this.roomId = null;
+    this.ui?.setRoomCode(null);
+    this.ui?.setMultiplayerStatus("Gostitelj te je odstranil iz sobe.");
+    this.ui?.hideAllOpponentBoards();
+    this.ui?.hideConfirmDialog();
+  }
+
+  _handleRejected() {
+    this._stopListening();
+    this.clearSession();
+    this._joinRequestSent = false;
+    this.roomId = null;
+    this.ui?.setRoomCode(null);
+    this.ui?.setMultiplayerStatus("Gostitelj te ni sprejel v sobo.");
+    this.ui?.hideAllOpponentBoards();
+  }
+
+  async startGameManual() {
+    if (!this.isHost || this._gameStarting) return;
+    const players = this.roomData?.players || {};
+    if (Object.keys(players).length < 2) {
+      this.ui?.showMessage("Čaka vsaj en nasprotnik!", "error", 2000);
+      return;
+    }
+    this._gameStarting = true;
+    await this._startGame(players);
+  }
+
   _resetLocalState() {
     this.peerConnected = false;
     this._knownPlayers = {};
     this._pendingRequests = new Set();
     this._winnerShown = false;
     this._gameStarting = false;
+    this._showingConfirm = false;
+    this._inRoom = false;
+    this._joinRequestSent = false;
     this.roomData = {};
     this._lastEmojiAt = 0;
     this._lastHintAt = 0;
@@ -198,32 +233,30 @@ export class Multiplayer {
   _processRoomState() {
     const d = this.roomData;
     if (!d) return;
-    const cap = d.capacity || this.roomCapacity || 2;
     const players = d.players || {};
     const joinReqs = d.join_requests || {};
 
-    // ── HOST: show pending join requests one at a time ──
-    if (this.isHost) {
-      for (const [sid, req] of Object.entries(joinReqs)) {
-        if (req && sid !== this.sessionId && !players[sid] && !this._pendingRequests.has(sid)) {
-          this._pendingRequests.add(sid);
-          this.ui?.showConfirmDialog(req.nickname, sid);
-          break; // one at a time
-        }
-      }
+    // ── Lobby display + topic ──
+    this.ui?.updateLobby(players, joinReqs, this.sessionId, d.status === "playing");
+    this.ui?.setRoomTopic(d.topic || d.game_config?.topic);
 
-      // Auto-start when capacity reached and not yet started
-      const playerCount = Object.keys(players).length;
-      if (playerCount >= cap && d.status === "waiting" && !this._gameStarting) {
-        this._gameStarting = true;
-        this._startGame(players, cap);
+    // ── Guest: track confirmation, detect kick + rejection ──
+    if (!this.isHost) {
+      if (players[this.sessionId] && !this._inRoom) this._inRoom = true;
+      if (this._inRoom && !players[this.sessionId] && d.status === "waiting") {
+        this._handleKicked(); return;
+      }
+      if (this._joinRequestSent && !joinReqs[this.sessionId] && !players[this.sessionId] && !this._inRoom) {
+        this._handleRejected(); return;
       }
     }
+
+    // ── HOST: join requests are handled inline in lobby slots ──
 
     // ── GUEST: host started the game ──
     if (!this.isHost && d.status === "playing" && !this.peerConnected && players[this.sessionId]) {
       this.peerConnected = true;
-      this.roomCapacity = cap;
+      this.roomCapacity = Object.keys(players).length;
       this.persistSession();
       try { this.game.receiveGameConfig(d.game_config); } catch (e) {
         console.error("[MP] receiveGameConfig failed:", e);
@@ -324,8 +357,8 @@ export class Multiplayer {
       this.ui?.setMultiplayerStatus("Nova igra — srečno!");
     }
 
-    // ── A player left (host sees player disappear) ──
-    if (this.isHost && this.peerConnected) {
+    // ── A player left ──
+    if (this.peerConnected) {
       for (const [sid, k] of Object.entries(this._knownPlayers)) {
         if (!players[sid]) {
           delete this._knownPlayers[sid];
@@ -350,7 +383,7 @@ export class Multiplayer {
     }
   }
 
-  async _startGame(players, cap) {
+  async _startGame(players) {
     const config = this.game.getGameConfig();
     await this._fbPatch(`rooms/${this.roomId}`, {
       status: "playing",
@@ -359,7 +392,7 @@ export class Multiplayer {
 
     this.game.gameStartTime = Date.now();
     this.peerConnected = true;
-    this.roomCapacity = cap;
+    this.roomCapacity = Object.keys(players).length;
 
     for (const [sid, p] of Object.entries(players)) {
       if (sid !== this.sessionId) this._ensureOpponentBoard(sid, p, config.gameMode);
