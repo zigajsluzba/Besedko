@@ -267,6 +267,7 @@ export class Multiplayer {
       }
       this.ui?.setRoomTopic(d.game_config?.topic);
       this.ui?.hideConfirmDialog();
+      this.ui?.onMpGameStart();
       this.ui?.showMpEmojiPanel();
       this.ui?.showMpHintBtn();
       for (const [sid, p] of Object.entries(players)) {
@@ -413,6 +414,7 @@ export class Multiplayer {
     }
 
     this.ui?.setRoomTopic(this.game.topic);
+    this.ui?.onMpGameStart();
     this.ui?.showMpEmojiPanel();
     this.ui?.showMpHintBtn();
     this.ui?.setMultiplayerStatus("Igra se je začela. Srečno!");

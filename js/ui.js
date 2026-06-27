@@ -1,6 +1,6 @@
 ﻿import { Multiplayer } from "./multiplayer.js?v=20260627-09";
 import { config } from "./config.js?v=20260627-09";
-import { sounds } from "./sounds.js?v=20260627-13";
+import { sounds } from "./sounds.js?v=20260627-14";
 
 export class UI {
   constructor(storage) {
@@ -454,8 +454,13 @@ export class UI {
     }
 
     if (normalized === "multiplayer") {
+      // Hide all game UI until the game actually starts (onMpGameStart will reveal it).
       if (this.revealBarEl) this.revealBarEl.hidden = true;
       if (this.riddlePanel) this.riddlePanel.hidden = true;
+      const myBoard = document.getElementById("my-board-wrapper");
+      if (myBoard) myBoard.style.display = "";
+      const kb = document.getElementById("keyboard");
+      if (kb) kb.style.display = "";
       if (this._revealCountdownInterval) { clearInterval(this._revealCountdownInterval); this._revealCountdownInterval = null; }
     }
 
@@ -850,6 +855,18 @@ export class UI {
     );
   }
 
+  // Called by multiplayer.js when the game actually starts (host + guest).
+  onMpGameStart() {
+    const mode = this.game?.gameMode || "classic";
+    // setGameMode will now run fully because peerConnected is already true.
+    this.setGameMode(mode);
+    // Show game mode strip description
+    if (this.gameModeDesc) {
+      const info = UI._modeInfo[mode] || UI._modeInfo.classic;
+      this.gameModeDesc.textContent = info.desc;
+    }
+  }
+
   // --- MP emoji ---
 
   showMpEmojiPanel() {
@@ -1149,7 +1166,14 @@ export class UI {
     const isTimeAttack = mode === "timeattack";
     const isReveal = mode === "reveal";
 
-    if (this.boardsContainer) this.boardsContainer.style.display = isRiddle ? "none" : "";
+    // In MP lobby (game not yet started) only update labels — don't show game UI.
+    const inMpLobby = this.game?.mode === "multiplayer" && !this.game?.multiplayer?.peerConnected;
+    if (inMpLobby) return;
+
+    // Hide only the user's own board in riddle mode; opponent cards live in the same
+    // boardsContainer so we must NOT hide the whole container.
+    const myBoard = document.getElementById("my-board-wrapper");
+    if (myBoard) myBoard.style.display = isRiddle ? "none" : "";
     const kb = document.getElementById("keyboard");
     if (kb) kb.style.display = isRiddle ? "none" : "";
     if (this.keyboardActions) this.keyboardActions.hidden = isRiddle || !this.hintsEnabled();
