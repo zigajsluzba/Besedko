@@ -1,0 +1,766 @@
+<!doctype html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Besedko+ Admin</title>
+  <style>
+    :root {
+      --bg:     #0f0f10;
+      --bg-2:   #1a1a1d;
+      --bg-3:   #252528;
+      --border: rgba(255,255,255,0.09);
+      --text:   #f0f0f0;
+      --muted:  #888;
+      --green:  #6aaa64;
+      --yellow: #c9a227;
+      --red:    #e05c5c;
+      --blue:   #4a9eff;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; font-size: 14px; min-height: 100vh; }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Login ── */
+    #login-screen {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh;
+    }
+    .login-card {
+      background: var(--bg-2); border: 1px solid var(--border); border-radius: 16px;
+      padding: 40px; width: min(380px, 90vw); text-align: center;
+    }
+    .login-card h1 { font-size: 1.4rem; margin-bottom: 8px; }
+    .login-card p { color: var(--muted); margin-bottom: 20px; font-size: 0.88rem; }
+    .login-card input[type=password] {
+      width: 100%; padding: 10px 14px; background: var(--bg-3);
+      border: 1px solid var(--border); border-radius: 8px; color: var(--text);
+      font-size: 1rem; margin-bottom: 10px; outline: none;
+    }
+    .login-card input[type=password]:focus { border-color: var(--blue); }
+    .btn-primary {
+      width: 100%; padding: 10px; background: var(--blue); color: #fff;
+      border: none; border-radius: 8px; font-size: 1rem; font-weight: 600;
+      cursor: pointer; transition: opacity 150ms;
+    }
+    .btn-primary:hover { opacity: 0.85; }
+    .error-msg { color: var(--red); font-size: 0.82rem; margin-top: 10px; min-height: 1.2em; }
+    .reset-link { display: block; margin-top: 14px; font-size: 0.8rem; color: var(--muted); cursor: pointer; }
+    .reset-link:hover { color: var(--text); }
+
+    /* ── Layout ── */
+    #dashboard { display: none; flex-direction: column; min-height: 100vh; }
+    #dashboard.visible { display: flex; }
+
+    header.admin-header {
+      position: sticky; top: 0; z-index: 10;
+      background: rgba(15,15,16,0.95); backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 24px; gap: 12px;
+    }
+    .admin-title { font-size: 1.1rem; font-weight: 800; white-space: nowrap; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .last-updated { font-size: 0.75rem; color: var(--muted); }
+    .btn-sm {
+      padding: 5px 12px; border: 1px solid var(--border); background: var(--bg-3);
+      color: var(--text); border-radius: 6px; cursor: pointer; font-size: 0.82rem;
+      transition: background 150ms;
+    }
+    .btn-sm:hover { background: rgba(255,255,255,0.12); }
+    .btn-sm.danger { border-color: var(--red); color: var(--red); }
+    .btn-sm.danger:hover { background: rgba(224,92,92,0.12); }
+
+    main.admin-main { padding: 20px 24px; flex: 1; }
+
+    /* ── Cards ── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px; margin-bottom: 20px;
+    }
+    .stat-card {
+      background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px;
+      padding: 14px 16px;
+    }
+    .stat-card strong { display: block; font-size: 1.9rem; font-weight: 800; line-height: 1; }
+    .stat-card span { display: block; font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+    .stat-card.green strong { color: var(--green); }
+    .stat-card.yellow strong { color: var(--yellow); }
+    .stat-card.blue strong { color: var(--blue); }
+
+    /* ── Section header ── */
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px; margin-top: 24px;
+    }
+    .section-header h2 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+
+    /* ── Filters ── */
+    .filter-bar {
+      display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .filter-btn {
+      padding: 4px 12px; border: 1px solid var(--border); background: var(--bg-3);
+      color: var(--muted); border-radius: 99px; cursor: pointer; font-size: 0.8rem;
+      transition: all 150ms;
+    }
+    .filter-btn.active, .filter-btn:hover { background: var(--blue); color: #fff; border-color: var(--blue); }
+    #search {
+      margin-left: auto; padding: 4px 10px; background: var(--bg-3);
+      border: 1px solid var(--border); border-radius: 6px; color: var(--text);
+      font-size: 0.82rem; outline: none; width: 180px;
+    }
+    #search:focus { border-color: var(--blue); }
+
+    /* ── Tables ── */
+    .table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    thead th {
+      padding: 10px 12px; background: var(--bg-2); text-align: left;
+      font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--muted); border-bottom: 1px solid var(--border);
+      white-space: nowrap; cursor: pointer; user-select: none;
+    }
+    thead th:hover { color: var(--text); }
+    thead th.sort-asc::after { content: " ↑"; }
+    thead th.sort-desc::after { content: " ↓"; }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background 100ms; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,0.03); }
+    tbody td { padding: 9px 12px; vertical-align: middle; }
+    .mono { font-family: monospace; letter-spacing: 0.05em; font-size: 0.88rem; }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 99px;
+      font-size: 0.72rem; font-weight: 700; white-space: nowrap;
+    }
+    .badge-waiting  { background: rgba(201,162,39,0.18); color: var(--yellow); }
+    .badge-playing  { background: rgba(106,170,100,0.18); color: var(--green); }
+    .badge-done     { background: rgba(255,255,255,0.06); color: var(--muted); }
+
+    /* ── Players chip list ── */
+    .player-chips { display: flex; flex-wrap: wrap; gap: 3px; }
+    .player-chip {
+      padding: 2px 7px; background: var(--bg-3); border: 1px solid var(--border);
+      border-radius: 99px; font-size: 0.72rem; white-space: nowrap;
+    }
+    .player-chip.host { border-color: var(--yellow); color: var(--yellow); }
+    .pending-count { color: var(--muted); font-size: 0.72rem; margin-left: 2px; }
+
+    /* ── Charts ── */
+    .charts-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-top: 24px; }
+    .chart-card {
+      background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px; padding: 16px;
+    }
+    .chart-card h3 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 12px; }
+    .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+    .bar-label { font-size: 0.76rem; width: 100px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bar-wrap { flex: 1; height: 16px; background: var(--bg-3); border-radius: 3px; overflow: hidden; }
+    .bar-fill { height: 100%; background: var(--blue); border-radius: 3px; transition: width 0.4s; min-width: 2px; }
+    .bar-val { font-size: 0.72rem; color: var(--muted); width: 28px; text-align: right; }
+
+    /* ── Empty state ── */
+    .empty { padding: 32px; text-align: center; color: var(--muted); font-size: 0.88rem; }
+
+    /* ── Loader ── */
+    .loader { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Expand row ── */
+    .expand-row td { padding: 0; }
+    .expand-inner {
+      padding: 10px 16px; background: rgba(255,255,255,0.02);
+      border-top: 1px solid var(--border); font-size: 0.8rem;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px;
+    }
+    .expand-group { display: flex; flex-direction: column; gap: 2px; }
+    .expand-key { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .expand-val { font-size: 0.82rem; }
+    .expand-player-row { display: flex; gap: 8px; align-items: center; margin-bottom: 3px; }
+
+    /* ── Refresh indicator ── */
+    .refresh-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--green); margin-right: 5px; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  </style>
+</head>
+<body>
+
+<!-- ─── Login ──────────────────────────────── -->
+<div id="login-screen">
+  <div class="login-card">
+    <h1>🎮 Besedko+ Admin</h1>
+
+    <div id="setup-form" hidden>
+      <p>Nastavi admin geslo (samo prvič)</p>
+      <input type="password" id="setup-pw"  placeholder="Novo geslo" autocomplete="new-password" />
+      <input type="password" id="setup-pw2" placeholder="Ponovi geslo" autocomplete="new-password" />
+      <button class="btn-primary" id="setup-btn">Nastavi geslo</button>
+      <div class="error-msg" id="setup-error"></div>
+    </div>
+
+    <div id="login-form" hidden>
+      <p>Vstopi v admin ploščo</p>
+      <input type="password" id="login-pw" placeholder="Geslo" autocomplete="current-password" />
+      <button class="btn-primary" id="login-btn">Vstopi</button>
+      <div class="error-msg" id="login-error"></div>
+      <span class="reset-link" id="reset-link">Pozabil geslo? Ponastavi</span>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Dashboard ──────────────────────────── -->
+<div id="dashboard">
+  <header class="admin-header">
+    <div class="admin-title">🎮 Besedko+ Admin</div>
+    <div class="header-right">
+      <span class="last-updated" id="last-updated"></span>
+      <button class="btn-sm" id="refresh-btn">⟳ Osveži</button>
+      <button class="btn-sm danger" id="logout-btn">Odjava</button>
+    </div>
+  </header>
+
+  <main class="admin-main">
+
+    <!-- Overview cards -->
+    <div class="cards-grid">
+      <div class="stat-card green"><strong id="c-active">—</strong><span>Aktivne sobe</span></div>
+      <div class="stat-card green"><strong id="c-playing">—</strong><span>Igre v teku</span></div>
+      <div class="stat-card yellow"><strong id="c-waiting">—</strong><span>Čaka na igralce</span></div>
+      <div class="stat-card"><strong id="c-today">—</strong><span>Sobe danes</span></div>
+      <div class="stat-card"><strong id="c-total">—</strong><span>Skupaj sob</span></div>
+      <div class="stat-card blue"><strong id="c-players">—</strong><span>Aktivnih igralcev</span></div>
+      <div class="stat-card blue"><strong id="c-users">—</strong><span>Registriranih</span></div>
+      <div class="stat-card"><strong id="c-games-played">—</strong><span>Skupaj odigranih iger</span></div>
+    </div>
+
+    <!-- Rooms section -->
+    <div class="section-header">
+      <h2><span class="refresh-dot"></span>Sobe</h2>
+      <button class="btn-sm" id="export-btn">⬇ Izvozi CSV</button>
+    </div>
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all">Vse</button>
+      <button class="filter-btn" data-filter="waiting">Čaka</button>
+      <button class="filter-btn" data-filter="playing">Igra</button>
+      <button class="filter-btn" data-filter="done">Končano</button>
+      <button class="filter-btn" data-filter="recent">Zadnjih 24h</button>
+      <input type="text" id="search" placeholder="Išči sobo, ime..." />
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-col="code">Koda</th>
+            <th data-col="status">Status</th>
+            <th data-col="topic">Tema</th>
+            <th data-col="mode">Način</th>
+            <th data-col="word">Beseda</th>
+            <th data-col="players">Igralci</th>
+            <th data-col="pending">Čaka</th>
+            <th data-col="created">Ustvarjena</th>
+            <th data-col="age">Pred</th>
+          </tr>
+        </thead>
+        <tbody id="rooms-tbody"></tbody>
+      </table>
+    </div>
+    <div id="rooms-empty" class="empty" hidden>Ni sob</div>
+    <div id="rooms-loader" class="empty"><span class="loader"></span></div>
+
+    <!-- Charts -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>Teme</h3>
+        <div id="chart-topics"></div>
+      </div>
+      <div class="chart-card">
+        <h3>Načini igre</h3>
+        <div id="chart-modes"></div>
+      </div>
+      <div class="chart-card">
+        <h3>Aktivnost (zadnjih 24h)</h3>
+        <div id="chart-hours"></div>
+      </div>
+      <div class="chart-card">
+        <h3>Dolžina besede</h3>
+        <div id="chart-lengths"></div>
+      </div>
+    </div>
+
+    <!-- Users section -->
+    <div id="users-section" hidden>
+      <div class="section-header" style="margin-top:28px">
+        <h2>Registrirani uporabniki</h2>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>UID</th>
+              <th>Odigrane</th>
+              <th>Zmage</th>
+              <th>Win rate</th>
+              <th>Niz</th>
+              <th>Best niz</th>
+              <th>Najljubši način</th>
+              <th>Skupaj (vse)</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const FIREBASE_URL = "https://besedko-c9763-default-rtdb.europe-west1.firebasedatabase.app";
+const HASH_KEY     = "ba_h";     // localStorage key for password hash
+const AUTH_KEY     = "ba_auth";  // sessionStorage key for session
+
+// ── Password helpers ──────────────────────────────────
+async function sha256(str) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2, "0")).join("");
+}
+
+// ── DOM helpers ───────────────────────────────────────
+const $ = id => document.getElementById(id);
+function show(el) { if (el) el.hidden = false; }
+function hide(el) { if (el) el.hidden = true; }
+
+// ── Auth flow ─────────────────────────────────────────
+function initAuth() {
+  const storedHash = localStorage.getItem(HASH_KEY);
+  const session    = sessionStorage.getItem(AUTH_KEY);
+
+  if (session === "1" && storedHash) { enterDashboard(); return; }
+
+  $("login-screen").style.display = "";
+  if (!storedHash) {
+    show($("setup-form"));
+  } else {
+    show($("login-form"));
+    $("login-pw").focus();
+    $("login-pw").addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
+  }
+
+  $("setup-btn").addEventListener("click", doSetup);
+  $("setup-pw2").addEventListener("keydown", e => { if (e.key === "Enter") doSetup(); });
+  $("login-btn").addEventListener("click", doLogin);
+  $("reset-link").addEventListener("click", () => {
+    if (confirm("Izbriši shranjeno geslo? Moral boš nastaviti novo.")) {
+      localStorage.removeItem(HASH_KEY);
+      location.reload();
+    }
+  });
+}
+
+async function doSetup() {
+  const pw  = $("setup-pw").value;
+  const pw2 = $("setup-pw2").value;
+  if (pw.length < 4)    { $("setup-error").textContent = "Geslo mora biti vsaj 4 znake."; return; }
+  if (pw !== pw2)        { $("setup-error").textContent = "Gesli se ne ujemata."; return; }
+  localStorage.setItem(HASH_KEY, await sha256(pw));
+  sessionStorage.setItem(AUTH_KEY, "1");
+  enterDashboard();
+}
+
+async function doLogin() {
+  const pw   = $("login-pw").value;
+  const hash = await sha256(pw);
+  if (hash !== localStorage.getItem(HASH_KEY)) {
+    $("login-error").textContent = "Napačno geslo.";
+    $("login-pw").select();
+    return;
+  }
+  sessionStorage.setItem(AUTH_KEY, "1");
+  enterDashboard();
+}
+
+function doLogout() {
+  sessionStorage.removeItem(AUTH_KEY);
+  location.reload();
+}
+
+// ── Dashboard ─────────────────────────────────────────
+let allRooms    = {};
+let allUsers    = {};
+let filterState = "all";
+let searchStr   = "";
+let sortCol     = "created";
+let sortDir     = -1; // -1 = desc
+
+function enterDashboard() {
+  $("login-screen").style.display = "none";
+  $("dashboard").classList.add("visible");
+  $("refresh-btn").addEventListener("click", loadData);
+  $("logout-btn").addEventListener("click", doLogout);
+  $("export-btn").addEventListener("click", exportCSV);
+  $("search").addEventListener("input", e => { searchStr = e.target.value.toLowerCase(); renderRooms(); });
+
+  document.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      filterState = btn.dataset.filter;
+      renderRooms();
+    });
+  });
+
+  document.querySelectorAll("thead th[data-col]").forEach(th => {
+    th.addEventListener("click", () => {
+      const col = th.dataset.col;
+      if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = -1; }
+      document.querySelectorAll("thead th").forEach(t => t.classList.remove("sort-asc","sort-desc"));
+      th.classList.add(sortDir === 1 ? "sort-asc" : "sort-desc");
+      renderRooms();
+    });
+  });
+
+  // Mark created col as default sort
+  document.querySelector(`th[data-col="created"]`)?.classList.add("sort-desc");
+
+  loadData();
+  // Auto-refresh every 30s
+  setInterval(loadData, 30_000);
+}
+
+async function loadData() {
+  try {
+    show($("rooms-loader")); hide($("rooms-empty"));
+    const [roomsRes, usersRes] = await Promise.all([
+      fetch(`${FIREBASE_URL}/rooms.json`),
+      fetch(`${FIREBASE_URL}/users.json`).catch(() => null),
+    ]);
+
+    allRooms = roomsRes.ok ? (await roomsRes.json() || {}) : {};
+    if (usersRes?.ok) allUsers = (await usersRes.json() || {});
+
+    $("last-updated").textContent = "Posodobljeno: " + new Date().toLocaleTimeString("sl-SI");
+    hide($("rooms-loader"));
+
+    renderCards();
+    renderRooms();
+    renderCharts();
+    renderUsers();
+  } catch (e) {
+    hide($("rooms-loader"));
+    $("last-updated").textContent = "Napaka: " + e.message;
+  }
+}
+
+// ── Room helpers ──────────────────────────────────────
+function roomList() {
+  return Object.entries(allRooms).map(([code, r]) => ({ code, ...r }));
+}
+
+function relTime(ts) {
+  if (!ts) return "—";
+  const diff = Date.now() - ts;
+  if (diff < 60_000)   return "pred " + Math.floor(diff / 1000) + "s";
+  if (diff < 3_600_000) return "pred " + Math.floor(diff / 60_000) + "min";
+  if (diff < 86_400_000) return "pred " + Math.floor(diff / 3_600_000) + "h";
+  return "pred " + Math.floor(diff / 86_400_000) + "d";
+}
+
+function absTime(ts) {
+  if (!ts) return "—";
+  return new Date(ts).toLocaleString("sl-SI", { day:"2-digit", month:"2-digit", year:"2-digit", hour:"2-digit", minute:"2-digit" });
+}
+
+function duration(ts) {
+  if (!ts) return "—";
+  const s = Math.floor((Date.now() - ts) / 1000);
+  const m = Math.floor(s / 60), h = Math.floor(m / 60);
+  if (h > 0) return h + "h " + (m % 60) + "min";
+  if (m > 0) return m + "min";
+  return s + "s";
+}
+
+function modeLabel(mode) {
+  const map = { classic:"Klasično", hard:"Težko 🔥", timeattack:"⏱ Čas", zen:"🧘 Zen",
+                reveal:"👁 Razkrivanje", riddle:"🎭 Uganka", random:"🎲 Naključno" };
+  return map[mode] || mode || "—";
+}
+
+function topicLabel(t) {
+  const map = { mešano:"🌍 Mešano", živali:"🐾 Živali", hrana:"🍕 Hrana", šport:"⚽ Šport",
+                narava:"🌿 Narava", glasba:"🎵 Glasba", filmi:"🎬 Filmi", known:"📖 Znano" };
+  return map[t] || t || "—";
+}
+
+function getPlayers(r) { return r.players ? Object.entries(r.players) : []; }
+function getPending(r) { return r.join_requests ? Object.keys(r.join_requests).length : 0; }
+
+function rowValue(r, col) {
+  const players = getPlayers(r);
+  switch (col) {
+    case "code":    return r.code;
+    case "status":  return r.status;
+    case "topic":   return r.topic || "";
+    case "mode":    return r.game_config?.mode || "";
+    case "word":    return r.game_config?.cols || 0;
+    case "players": return players.length;
+    case "pending": return getPending(r);
+    case "created": return r.created_at || 0;
+    case "age":     return r.created_at || 0;
+    default: return "";
+  }
+}
+
+// ── Render cards ──────────────────────────────────────
+function renderCards() {
+  const rooms   = roomList();
+  const now     = Date.now();
+  const today   = new Date().setHours(0,0,0,0);
+
+  const active  = rooms.filter(r => r.status === "waiting" || r.status === "playing");
+  const playing = rooms.filter(r => r.status === "playing");
+  const waiting = rooms.filter(r => r.status === "waiting");
+  const todayR  = rooms.filter(r => r.created_at >= today);
+  const activePl = active.reduce((n, r) => n + getPlayers(r).length, 0);
+
+  // Aggregate from user stats
+  let totalGamesPlayed = 0;
+  Object.values(allUsers).forEach(u => { totalGamesPlayed += u?.stats?.played || 0; });
+
+  $("c-active").textContent   = active.length;
+  $("c-playing").textContent  = playing.length;
+  $("c-waiting").textContent  = waiting.length;
+  $("c-today").textContent    = todayR.length;
+  $("c-total").textContent    = rooms.length;
+  $("c-players").textContent  = activePl;
+  $("c-users").textContent    = Object.keys(allUsers).length || "—";
+  $("c-games-played").textContent = totalGamesPlayed || "—";
+}
+
+// ── Render rooms table ────────────────────────────────
+function renderRooms() {
+  const tbody = $("rooms-tbody");
+  const now   = Date.now();
+  let rooms   = roomList();
+
+  // Filter by status
+  if (filterState === "waiting") rooms = rooms.filter(r => r.status === "waiting");
+  else if (filterState === "playing") rooms = rooms.filter(r => r.status === "playing");
+  else if (filterState === "done")   rooms = rooms.filter(r => r.status === "done");
+  else if (filterState === "recent") rooms = rooms.filter(r => now - (r.created_at||0) < 86_400_000);
+
+  // Search
+  if (searchStr) {
+    rooms = rooms.filter(r => {
+      const pnames = getPlayers(r).map(([,p]) => (p.name||"").toLowerCase()).join(" ");
+      return r.code?.toLowerCase().includes(searchStr)
+          || (r.topic||"").toLowerCase().includes(searchStr)
+          || (r.game_config?.mode||"").toLowerCase().includes(searchStr)
+          || pnames.includes(searchStr);
+    });
+  }
+
+  // Sort
+  rooms.sort((a, b) => {
+    const va = rowValue(a, sortCol), vb = rowValue(b, sortCol);
+    return typeof va === "number" ? (va - vb) * sortDir
+      : String(va).localeCompare(String(vb)) * sortDir;
+  });
+
+  if (!rooms.length) { tbody.innerHTML = ""; show($("rooms-empty")); return; }
+  hide($("rooms-empty"));
+
+  tbody.innerHTML = rooms.map(r => {
+    const players = getPlayers(r);
+    const pending = getPending(r);
+    const host    = r.host;
+    const cols    = r.game_config?.cols || "?";
+    const rows    = r.game_config?.rows || "?";
+    const status  = r.status || "unknown";
+    const badgeClass = status === "playing" ? "badge-playing" : status === "waiting" ? "badge-waiting" : "badge-done";
+    const statusLabel = status === "playing" ? "Igra" : status === "waiting" ? "Čaka" : "Končano";
+
+    const playerChips = players.map(([sid, p]) =>
+      `<span class="player-chip${sid === host ? " host" : ""}" title="${sid}">${p.name || "?"}</span>`
+    ).join("");
+
+    const pendingChip = pending > 0 ? `<span class="pending-count">(+${pending} čaka)</span>` : "";
+
+    const expandId = "exp-" + r.code;
+
+    return `<tr class="room-row" data-code="${r.code}" style="cursor:pointer">
+      <td class="mono">${r.code}</td>
+      <td><span class="badge ${badgeClass}">${statusLabel}</span></td>
+      <td>${topicLabel(r.topic)}</td>
+      <td>${modeLabel(r.game_config?.mode)}</td>
+      <td style="color:var(--muted)">${cols} črk / ${rows} ugib.</td>
+      <td><div class="player-chips">${playerChips}${pendingChip}</div></td>
+      <td style="color:var(--muted)">${pending || "—"}</td>
+      <td title="${absTime(r.created_at)}" style="color:var(--muted);white-space:nowrap">${absTime(r.created_at)}</td>
+      <td style="color:var(--muted);white-space:nowrap">${relTime(r.created_at)}</td>
+    </tr>
+    <tr class="expand-row" id="${expandId}" hidden>
+      <td colspan="9">
+        <div class="expand-inner">
+          <div class="expand-group">
+            <span class="expand-key">Koda sobe</span>
+            <span class="expand-val mono">${r.code}</span>
+          </div>
+          <div class="expand-group">
+            <span class="expand-key">Status</span>
+            <span class="expand-val">${status}</span>
+          </div>
+          <div class="expand-group">
+            <span class="expand-key">Ustvarjena</span>
+            <span class="expand-val">${absTime(r.created_at)}</span>
+          </div>
+          <div class="expand-group">
+            <span class="expand-key">Trajanje</span>
+            <span class="expand-val">${duration(r.created_at)}</span>
+          </div>
+          <div class="expand-group">
+            <span class="expand-key">Tema / Način</span>
+            <span class="expand-val">${topicLabel(r.topic)} · ${modeLabel(r.game_config?.mode)}</span>
+          </div>
+          <div class="expand-group">
+            <span class="expand-key">Beseda / Ugibanja</span>
+            <span class="expand-val">${cols} črk · ${rows} ugibanj</span>
+          </div>
+          <div class="expand-group" style="grid-column:1/-1">
+            <span class="expand-key">Igralci (${players.length})</span>
+            <div style="margin-top:4px">${players.map(([sid, p]) => `
+              <div class="expand-player-row">
+                <span class="player-chip${sid === host ? " host" : ""}">${p.name || "?"}</span>
+                <span style="color:var(--muted);font-size:0.72rem">${sid === host ? "host · " : ""}pridružen ${relTime(p.joined_at)}</span>
+              </div>`).join("") || "<span style='color:var(--muted)'>Ni igralcev</span>"}</div>
+          </div>
+          ${pending ? `<div class="expand-group" style="grid-column:1/-1">
+            <span class="expand-key">Čakajoče zahteve (${pending})</span>
+            <div style="margin-top:4px">${Object.entries(r.join_requests||{}).map(([sid, req]) => `
+              <div class="expand-player-row">
+                <span class="player-chip">${req.name || "?"}</span>
+                <span style="color:var(--muted);font-size:0.72rem">${relTime(req.requested_at)}</span>
+              </div>`).join("")}</div>
+          </div>` : ""}
+        </div>
+      </td>
+    </tr>`;
+  }).join("");
+
+  // Expand on row click
+  tbody.querySelectorAll(".room-row").forEach(row => {
+    row.addEventListener("click", () => {
+      const code = row.dataset.code;
+      const expRow = $("exp-" + code);
+      if (expRow) expRow.hidden = !expRow.hidden;
+    });
+  });
+}
+
+// ── Render charts ─────────────────────────────────────
+function barChart(container, data) {
+  if (!container) return;
+  if (!data.length) { container.innerHTML = `<div style="color:var(--muted);font-size:0.8rem">Ni podatkov</div>`; return; }
+  const max = Math.max(...data.map(d => d.v), 1);
+  container.innerHTML = data.slice(0, 10).map(d =>
+    `<div class="bar-row">
+      <span class="bar-label" title="${d.k}">${d.k}</span>
+      <div class="bar-wrap"><div class="bar-fill" style="width:${Math.round(d.v/max*100)}%"></div></div>
+      <span class="bar-val">${d.v}</span>
+    </div>`
+  ).join("");
+}
+
+function renderCharts() {
+  const rooms = roomList();
+
+  // Topics
+  const topicCount = {};
+  rooms.forEach(r => { const t = r.topic || "neznano"; topicCount[t] = (topicCount[t]||0)+1; });
+  barChart($("chart-topics"), Object.entries(topicCount).sort((a,b)=>b[1]-a[1]).map(([k,v])=>({ k: topicLabel(k), v })));
+
+  // Modes
+  const modeCount = {};
+  rooms.forEach(r => { const m = r.game_config?.mode || "classic"; modeCount[m] = (modeCount[m]||0)+1; });
+  barChart($("chart-modes"), Object.entries(modeCount).sort((a,b)=>b[1]-a[1]).map(([k,v])=>({ k: modeLabel(k), v })));
+
+  // Activity by hour (last 24h)
+  const now    = Date.now();
+  const hourBuckets = Array.from({length:24}, (_,i)=> ({ k: i+"h", v: 0 }));
+  rooms.forEach(r => {
+    const age = now - (r.created_at||0);
+    if (age < 86_400_000) {
+      const h = new Date(r.created_at).getHours();
+      hourBuckets[h].v++;
+    }
+  });
+  barChart($("chart-hours"), hourBuckets);
+
+  // Word length
+  const lenCount = {};
+  rooms.forEach(r => { const l = r.game_config?.cols||5; lenCount[l] = (lenCount[l]||0)+1; });
+  barChart($("chart-lengths"), Object.entries(lenCount).sort((a,b)=>Number(a[0])-Number(b[0])).map(([k,v])=>({ k: k+" črk", v })));
+}
+
+// ── Render users ──────────────────────────────────────
+function renderUsers() {
+  const users = Object.entries(allUsers);
+  if (!users.length) { hide($("users-section")); return; }
+  show($("users-section"));
+
+  const rows = users.map(([uid, u]) => {
+    const s  = u?.stats || {};
+    const pl = s.played || 0;
+    const wi = s.wins || 0;
+    const wr = pl > 0 ? Math.round(wi/pl*100) + "%" : "—";
+    const bestMode = s.byMode
+      ? Object.entries(s.byMode).sort((a,b)=>b[1].played-a[1].played)[0]?.[0]
+      : null;
+    return { uid, pl, wi, wr, streak: s.streak||0, best: s.bestStreak||0, bestMode, totalAll: pl };
+  }).sort((a,b) => b.pl - a.pl);
+
+  $("users-tbody").innerHTML = rows.map(r =>
+    `<tr>
+      <td class="mono" title="${r.uid}" style="color:var(--muted)">${r.uid.slice(0,8)}…</td>
+      <td>${r.pl}</td>
+      <td>${r.wi}</td>
+      <td>${r.wr}</td>
+      <td>${r.streak}</td>
+      <td>${r.best}</td>
+      <td style="color:var(--muted)">${r.bestMode ? modeLabel(r.bestMode) : "—"}</td>
+      <td style="color:var(--muted)">${r.totalAll}</td>
+    </tr>`
+  ).join("");
+}
+
+// ── Export CSV ────────────────────────────────────────
+function exportCSV() {
+  const rooms = roomList();
+  const header = ["Koda","Status","Tema","Način","Dolžina","Ugibanja","Igralci","Čaka","Ustvarjena","Trajanje"];
+  const csv = [header.join(","), ...rooms.map(r => [
+    r.code,
+    r.status,
+    r.topic,
+    r.game_config?.mode,
+    r.game_config?.cols,
+    r.game_config?.rows,
+    getPlayers(r).length,
+    getPending(r),
+    absTime(r.created_at),
+    duration(r.created_at),
+  ].map(v => `"${v ?? ""}"`).join(","))].join("\n");
+
+  const a   = document.createElement("a");
+  a.href    = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+  a.download = "besedko-rooms-" + new Date().toISOString().slice(0,10) + ".csv";
+  a.click();
+}
+
+// ── Boot ──────────────────────────────────────────────
+initAuth();
+</script>
+</body>
+</html>
