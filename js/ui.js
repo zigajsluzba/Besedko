@@ -1,6 +1,6 @@
 ﻿import { Multiplayer } from "./multiplayer.js?v=20260627-09";
 import { config } from "./config.js?v=20260627-09";
-import { sounds } from "./sounds.js?v=20260627-12";
+import { sounds } from "./sounds.js?v=20260627-13";
 
 export class UI {
   constructor(storage) {
@@ -384,17 +384,20 @@ export class UI {
       if (e.target.id === "end-overlay") this.hideEndScreen();
     });
 
-    // Sounds toggle
-    const soundsToggle = document.getElementById("sounds-toggle");
-    if (soundsToggle) {
-      soundsToggle.setAttribute("aria-checked", String(sounds.enabled));
-      soundsToggle.classList.toggle("active", sounds.enabled);
-      soundsToggle.addEventListener("click", () => {
-        const on = sounds.toggle();
-        soundsToggle.setAttribute("aria-checked", String(on));
-        soundsToggle.classList.toggle("active", on);
-      });
-    }
+    // Sounds toggles (header + profile)
+    const updateSoundBtns = (on) => {
+      const hdr = document.getElementById("sounds-toggle-header");
+      const prf = document.getElementById("sounds-toggle");
+      if (hdr) hdr.textContent = on ? "🔊" : "🔇";
+      if (prf) { prf.setAttribute("aria-checked", String(on)); prf.classList.toggle("active", on); }
+    };
+    updateSoundBtns(sounds.enabled);
+    document.getElementById("sounds-toggle-header")?.addEventListener("click", () => {
+      updateSoundBtns(sounds.toggle());
+    });
+    document.getElementById("sounds-toggle")?.addEventListener("click", () => {
+      updateSoundBtns(sounds.toggle());
+    });
 
     this._initTileSwap();
 
