@@ -1623,7 +1623,8 @@ export class UI {
     if (overlay) overlay.hidden = true;
   }
 
-  showMpResults(mine, opp) {
+  // opponentResults: map of sid → { won, guessCount, nickname }
+  showMpResults(mine, opponentResults) {
     const overlay = document.getElementById("end-overlay");
     if (overlay) overlay.classList.remove("end-overlay--waiting");
     const waitEl = document.getElementById("end-mp-wait");
@@ -1632,12 +1633,19 @@ export class UI {
     if (!el) return;
     const fmt = r => r.won
       ? `✓ ${r.guessCount} ${r.guessCount === 1 ? "ugibanje" : "ugibanj"}`
-      : "✗ izgubil";
-    el.innerHTML = `
-      <div class="mp-result-row mp-result-me"><span>${this.storage?.getAvatar()||"🎮"} Jaz</span><span>${fmt(mine)}</span></div>
-      <div class="mp-result-row"><span>👤 Nasprotnik</span><span>${fmt(opp)}</span></div>`;
+      : "✗ izgubil/a";
+    let html = `<div class="mp-result-row mp-result-me"><span>${this.storage?.getAvatar()||"🎮"} Jaz</span><span>${fmt(mine)}</span></div>`;
+    for (const opp of Object.values(opponentResults)) {
+      html += `<div class="mp-result-row"><span>👤 ${opp.nickname || "Nasprotnik"}</span><span>${fmt(opp)}</span></div>`;
+    }
+    el.innerHTML = html;
     el.hidden = false;
     if (overlay) overlay.hidden = false;
+  }
+
+  updateMpWaitingProgress(finishedCount, totalCount) {
+    const waitEl = document.getElementById("end-mp-wait");
+    if (waitEl) waitEl.textContent = `⏳ Čakam… (${finishedCount}/${totalCount} končalo)`;
   }
 
   // --- Stats ---

@@ -188,7 +188,7 @@ export class Multiplayer {
     this._lastRematchReqAt = 0;
     this._lastRematchAt = 0;
     this._myResult = null;
-    this._opponentResult = null;
+    this._opponentResults = {};  // sid → { won, guessCount, finishedAt, nickname }
   }
 
   // ─── SSE / Firebase real-time ─────────────────────────────────────────────
@@ -332,12 +332,22 @@ export class Multiplayer {
         }
       }
 
-      // Check if opponent has finished (via results node)
+      // Check if any opponent has finished (via results node)
       const results = d.results || {};
-      const opSid = Object.keys(results).find(sid => sid !== this.sessionId);
-      if (opSid && results[opSid] && !this._opponentResult) {
-        this._opponentResult = results[opSid];
-        this._checkBothFinished();
+      let anyNew = false;
+      for (const [sid, res] of Object.entries(results)) {
+        if (sid !== this.sessionId && !this._opponentResults[sid]) {
+          this._opponentResults[sid] = {
+            ...res,
+            nickname: players[sid]?.nickname || "Nasprotnik",
+          };
+          anyNew = true;
+        }
+      }
+      if (anyNew) {
+        const finishedCount = Object.keys(this._opponentResults).length + (this._myResult ? 1 : 0);
+        this.ui?.updateMpWaitingProgress(finishedCount, this.roomCapacity);
+        this._checkAllFinished();
       }
     }
 
@@ -447,17 +457,19 @@ export class Multiplayer {
       finished: { won, guessCount, greenCount: greenCount || 0, finishedAt: Date.now() },
     });
     this._myResult = { won, guessCount };
-    // Write result to Firebase so opponent can see it
+    // Write result to Firebase so opponents can see it
     await this._fbSet(`rooms/${this.roomId}/results/${this.sessionId}`, {
       won, guessCount, finishedAt: Date.now(),
     });
-    this._checkBothFinished();
+    this._checkAllFinished();
   }
 
-  _checkBothFinished() {
-    if (!this._myResult || !this._opponentResult) return;
-    // Both finished — show comparison
-    this.ui?.showMpResults(this._myResult, this._opponentResult);
+  _checkAllFinished() {
+    if (!this._myResult) return;
+    const opponentCount = this.roomCapacity - 1;
+    if (Object.keys(this._opponentResults).length < opponentCount) return;
+    // Everyone finished — show full results
+    this.ui?.showMpResults(this._myResult, this._opponentResults);
     this.ui?.showMpRematch();
   }
 
@@ -535,7 +547,7 @@ export class Multiplayer {
 
     this._winnerShown = false;
     this._myResult = null;
-    this._opponentResult = null;
+    this._opponentResults = {};
     for (const k of Object.values(this._knownPlayers)) k.finishedShown = false;
     this.ui?.hideMpRematch();
     this.ui?.hideEndScreen?.();
