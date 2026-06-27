@@ -81,6 +81,7 @@ export function friendlyAuthError(code) {
     "auth/invalid-email":           "Neveljavna oblika e-naslova.",
     "auth/too-many-requests":       "Preveč poskusov. Počakaj malo.",
     "auth/network-request-failed":  "Napaka v omrežju.",
+    "auth/operation-not-allowed":   "Prijava z e-pošto ni vklopljena. Vklopi jo v Firebase konzoli → Authentication → Sign-in method.",
     "auth/popup-blocked":           "Brskalnik je blokiral okno. Dovoli pojavna okna.",
     "auth/unauthorized-domain":     "Domena ni pooblaščena v Firebase konzoli.",
     "auth/popup-closed-by-user":    null,

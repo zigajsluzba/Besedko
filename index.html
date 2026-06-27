@@ -21,7 +21,7 @@
         <div id="round-summary" class="round-summary" aria-live="polite">1/1</div>
         <button class="icon-button" id="stats-button" aria-label="Statistika" title="Statistika">📊</button>
         <!-- Auth: shows login button when logged out, user chip when logged in -->
-        <button class="icon-button auth-header-btn" id="auth-btn" aria-label="Prijava">👤</button>
+        <button class="icon-button auth-header-btn" id="auth-btn" aria-label="Prijava"><span id="header-avatar">👤</span></button>
         <button class="auth-user-chip" id="auth-user-chip" hidden aria-label="Profil">
           <span class="auth-avatar" id="auth-avatar" aria-hidden="true"></span>
           <span class="auth-chip-name" id="auth-chip-name"></span>
@@ -304,6 +304,16 @@
     <!-- Auth modal -->
     <div id="auth-modal" class="stats-modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
       <div class="stats-panel auth-modal-panel">
+        <!-- Identity card: always visible, nickname + avatar picker -->
+        <div class="identity-card" id="identity-card">
+          <div class="identity-row">
+            <button class="avatar-display-btn" id="identity-avatar-btn" type="button" title="Izberi avatar">🎮</button>
+            <input type="text" id="nickname-input" class="mp-text-input" placeholder="Vzdevek (vidno v igri)" maxlength="20" autocomplete="off" />
+            <button class="btn-icon-save" id="nickname-save-btn" type="button" title="Shrani">✓</button>
+          </div>
+          <input type="text" id="auth-name-input" hidden autocomplete="name" maxlength="30" />
+          <div class="avatar-grid" id="avatar-grid" hidden></div>
+        </div>
         <!-- Logged-out view -->
         <div id="auth-view-login">
           <header class="stats-header">
@@ -316,10 +326,6 @@
               Prijavi se z Google
             </button>
             <div class="auth-divider"><span>ali z e-pošto</span></div>
-            <div class="mp-modal-field">
-              <label class="mp-label" for="auth-name-input">Ime (za registracijo)</label>
-              <input type="text" id="auth-name-input" class="mp-text-input" placeholder="Žiga" maxlength="30" autocomplete="name" />
-            </div>
             <div class="mp-modal-field">
               <label class="mp-label" for="auth-email">E-naslov</label>
               <input type="email" id="auth-email" class="mp-text-input" placeholder="ime@primer.si" autocomplete="email" />
@@ -376,6 +382,6 @@
       </div>
     </div>
 
-    <script type="module" src="js/app.js?v=20260627-10"></script>
+    <script type="module" src="js/app.js?v=20260627-11"></script>
   </body>
 </html>

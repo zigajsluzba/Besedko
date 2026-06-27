@@ -52,7 +52,7 @@ export class Multiplayer {
       status: "waiting",
       topic: this.game.topic || "mešano",
       players: {
-        [this.sessionId]: { nickname: this.nickname, isHost: true, joinedAt: Date.now() },
+        [this.sessionId]: { nickname: this.nickname, isHost: true, joinedAt: Date.now(), avatar: this.game?.storage?.getAvatar() || "🎮" },
       },
       created_at: Date.now(),
     });
@@ -79,7 +79,7 @@ export class Multiplayer {
 
     // Use direct paths — slash-keyed PATCH body sends flat keys in SSE
     await this._fbSet(`rooms/${this.roomId}/join_requests/${this.sessionId}`, {
-      nickname: this.nickname, at: Date.now(),
+      nickname: this.nickname, at: Date.now(), avatar: this.game?.storage?.getAvatar() || "🎮",
     });
     await this._fbPatch(`rooms/${this.roomId}`, { status: "confirming" });
     this._joinRequestSent = true;
@@ -91,7 +91,7 @@ export class Multiplayer {
     if (!req) return;
     this._pendingRequests.delete(sessionId);
     await this._fbSet(`rooms/${this.roomId}/players/${sessionId}`,
-      { nickname: req.nickname, isHost: false, joinedAt: Date.now() });
+      { nickname: req.nickname, isHost: false, joinedAt: Date.now(), avatar: req.avatar || "🎮" });
     await this._fbDelete(`rooms/${this.roomId}/join_requests/${sessionId}`);
     this.ui?.hideConfirmDialog();
   }

@@ -79,6 +79,11 @@ export class Storage {
 		this.set("stats", s);
 	}
 
+	getNickname() { return this.get("nickname", null); }
+	setNickname(name) { this.set("nickname", name.trim().slice(0, 20)); }
+	getAvatar() { return this.get("avatar", "🎮"); }
+	setAvatar(emoji) { this.set("avatar", emoji); }
+
 	getStats() {
 		return this.get("stats", {});
 	}

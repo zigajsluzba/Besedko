@@ -555,7 +555,7 @@ function renderRooms() {
   // Search
   if (searchStr) {
     rooms = rooms.filter(r => {
-      const pnames = getPlayers(r).map(([,p]) => (p.name||"").toLowerCase()).join(" ");
+      const pnames = getPlayers(r).map(([,p]) => (p.nickname||p.name||"").toLowerCase()).join(" ");
       return r.code?.toLowerCase().includes(searchStr)
           || (r.topic||"").toLowerCase().includes(searchStr)
           || (r.game_config?.mode||"").toLowerCase().includes(searchStr)
@@ -583,9 +583,11 @@ function renderRooms() {
     const badgeClass = status === "playing" ? "badge-playing" : status === "waiting" ? "badge-waiting" : "badge-done";
     const statusLabel = status === "playing" ? "Igra" : status === "waiting" ? "Čaka" : "Končano";
 
-    const playerChips = players.map(([sid, p]) =>
-      `<span class="player-chip${sid === host ? " host" : ""}" title="${sid}">${p.name || "?"}</span>`
-    ).join("");
+    const playerChips = players.map(([sid, p]) => {
+      const av   = p.avatar || "";
+      const name = p.nickname || p.name || "?";
+      return `<span class="player-chip${sid === host ? " host" : ""}" title="${sid}">${av} ${name}</span>`;
+    }).join("");
 
     const pendingChip = pending > 0 ? `<span class="pending-count">(+${pending} čaka)</span>` : "";
 
@@ -631,19 +633,26 @@ function renderRooms() {
           </div>
           <div class="expand-group" style="grid-column:1/-1">
             <span class="expand-key">Igralci (${players.length})</span>
-            <div style="margin-top:4px">${players.map(([sid, p]) => `
-              <div class="expand-player-row">
-                <span class="player-chip${sid === host ? " host" : ""}">${p.name || "?"}</span>
-                <span style="color:var(--muted);font-size:0.72rem">${sid === host ? "host · " : ""}pridružen ${relTime(p.joined_at)}</span>
-              </div>`).join("") || "<span style='color:var(--muted)'>Ni igralcev</span>"}</div>
+            <div style="margin-top:4px">${players.map(([sid, p]) => {
+              const av = p.avatar ? p.avatar + " " : "";
+              const nm = p.nickname || p.name || "?";
+              const ts = p.joinedAt || p.joined_at;
+              return `<div class="expand-player-row">
+                <span class="player-chip${sid === host ? " host" : ""}">${av}${nm}</span>
+                <span style="color:var(--muted);font-size:0.72rem">${sid === host ? "host · " : ""}pridružen ${relTime(ts)}</span>
+              </div>`;
+            }).join("") || "<span style='color:var(--muted)'>Ni igralcev</span>"}</div>
           </div>
           ${pending ? `<div class="expand-group" style="grid-column:1/-1">
             <span class="expand-key">Čakajoče zahteve (${pending})</span>
-            <div style="margin-top:4px">${Object.entries(r.join_requests||{}).map(([sid, req]) => `
-              <div class="expand-player-row">
-                <span class="player-chip">${req.name || "?"}</span>
-                <span style="color:var(--muted);font-size:0.72rem">${relTime(req.requested_at)}</span>
-              </div>`).join("")}</div>
+            <div style="margin-top:4px">${Object.entries(r.join_requests||{}).map(([sid, req]) => {
+              const av = req.avatar ? req.avatar + " " : "";
+              const nm = req.nickname || req.name || "?";
+              return `<div class="expand-player-row">
+                <span class="player-chip">${av}${nm}</span>
+                <span style="color:var(--muted);font-size:0.72rem">${relTime(req.at || req.requested_at)}</span>
+              </div>`;
+            }).join("")}</div>
           </div>` : ""}
         </div>
       </td>

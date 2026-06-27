@@ -143,6 +143,14 @@ export class UI {
     // Reveal bar
     this.revealBarEl = document.getElementById("reveal-bar");
     this._revealCountdownInterval = null;
+    this._avatarGridOpen = false;
+
+    // Identity card
+    this.nicknameInput   = document.getElementById("nickname-input");
+    this.nicknameSaveBtn = document.getElementById("nickname-save-btn");
+    this.identityAvatar  = document.getElementById("identity-avatar-btn");
+    this.avatarGrid      = document.getElementById("avatar-grid");
+    this.headerAvatar    = document.getElementById("header-avatar");
 
     // MP mode display
     this.mpRoomModeDisplay = document.getElementById("mp-room-mode-display");
@@ -363,6 +371,13 @@ export class UI {
     });
 
     this._initTileSwap();
+
+    // Mark MP nickname inputs as user-edited when user types in them
+    this.mpModalNickname?.addEventListener("input", () => { if (this.mpModalNickname) this.mpModalNickname._userEdited = true; });
+    document.getElementById("mp-join-nickname")?.addEventListener("input", e => { e.target._userEdited = true; });
+
+    // ── Identity: avatar + nickname ──
+    this._initIdentity();
   }
 
   /** Build topic toggle buttons from dictionary. */
@@ -446,11 +461,12 @@ export class UI {
   // --- Create modal ---
 
   openCreateModal() {
-    const previous = window.localStorage.getItem("besedko-nickname") || "";
-    if (this.mpModalNickname) {
-      this.mpModalNickname.value = previous || "Igralec";
+    if (this.mpModalNickname && !this.mpModalNickname._userEdited) {
+      const nick = this.storage?.getNickname() || window.localStorage.getItem("besedko-nickname") || "";
+      this.mpModalNickname.value = nick || "Igralec";
     }
     this.mpCreateModal?.classList.add("visible");
+    this._syncNicknameToMP();
     setTimeout(() => this.mpModalNickname?.select(), 50);
   }
 
@@ -468,10 +484,14 @@ export class UI {
   // --- Join modal ---
 
   openJoinModal() {
-    const previous = window.localStorage.getItem("besedko-nickname") || "";
-    if (this.mpJoinNickname) this.mpJoinNickname.value = previous || "Igralec";
+    const joinNick = document.getElementById("mp-join-nickname");
+    if (joinNick && !joinNick._userEdited) {
+      const nick = this.storage?.getNickname() || window.localStorage.getItem("besedko-nickname") || "";
+      joinNick.value = nick || "Igralec";
+    }
     if (this.mpJoinCode) this.mpJoinCode.value = "";
     this.mpJoinModal?.classList.add("visible");
+    this._syncNicknameToMP();
     setTimeout(() => this.mpJoinCode?.focus(), 80);
   }
 
@@ -623,11 +643,11 @@ export class UI {
             : '<span class="slot-tag">čaka</span>';
           return `<div class="mp-player-slot slot-pending"><span class="slot-icon">⌛</span><span class="slot-name">${this._escHtml(s.nickname)}</span>${btns}</div>`;
         }
-        if (s.isMe) return `<div class="mp-player-slot slot-me"><span class="slot-icon">🙋</span><span class="slot-name">${this._escHtml(s.player.nickname)}</span><span class="slot-tag">jaz</span></div>`;
+        if (s.isMe) return `<div class="mp-player-slot slot-me"><span class="slot-icon">${this._escHtml(this.storage?.getAvatar() || "🙋")}</span><span class="slot-name">${this._escHtml(s.player.nickname)}</span><span class="slot-tag">jaz</span></div>`;
         const tag = s.player.isHost ? '<span class="slot-tag">gostitelj</span>' : '';
         const kickBtn = (isHost && !s.player.isHost)
           ? `<button class="slot-kick-btn" data-sid="${s.sid}" title="Odstrani" type="button">✕</button>` : '';
-        return `<div class="mp-player-slot slot-filled">${kickBtn}<span class="slot-icon">👤</span><span class="slot-name">${this._escHtml(s.player.nickname)}</span>${tag}</div>`;
+        return `<div class="mp-player-slot slot-filled">${kickBtn}<span class="slot-icon">${this._escHtml(s.player.avatar || "👤")}</span><span class="slot-name">${this._escHtml(s.player.nickname)}</span>${tag}</div>`;
       }).join("");
     }
 
@@ -931,6 +951,81 @@ export class UI {
         this._swapSelectedCol = null;
       }
     });
+  }
+
+  // --- Identity: avatar + nickname ---
+
+  _initIdentity() {
+    const AVATARS = ["🐱","🐶","🦊","🐯","🐼","🦁","🐸","🐙","🦋","🐳","🦄","🐲","🦅","🦉","🐺","🐻","🦇","🐬","🌺","⭐","🔥","💎","🎭","🎸"];
+
+    const stored = this.storage?.getAvatar() || "🎮";
+    const nick   = this.storage?.getNickname() || "";
+
+    if (this.nicknameInput) this.nicknameInput.value = nick;
+    this._setHeaderAvatar(stored);
+    if (this.identityAvatar) this.identityAvatar.textContent = stored;
+
+    // Build avatar grid
+    if (this.avatarGrid) {
+      this.avatarGrid.innerHTML = AVATARS.map(a =>
+        `<button class="avatar-opt${a === stored ? " selected" : ""}" data-emoji="${a}" type="button">${a}</button>`
+      ).join("");
+      this.avatarGrid.addEventListener("click", e => {
+        const btn = e.target.closest(".avatar-opt");
+        if (!btn) return;
+        const emoji = btn.dataset.emoji;
+        this.storage?.setAvatar(emoji);
+        this.avatarGrid.querySelectorAll(".avatar-opt").forEach(b => b.classList.remove("selected"));
+        btn.classList.add("selected");
+        if (this.identityAvatar) this.identityAvatar.textContent = emoji;
+        this._setHeaderAvatar(emoji);
+        this._syncNicknameToMP();
+      });
+    }
+
+    // Toggle avatar grid
+    if (this.identityAvatar) {
+      this.identityAvatar.addEventListener("click", () => {
+        if (this.avatarGrid) this.avatarGrid.hidden = !this.avatarGrid.hidden;
+      });
+    }
+
+    // Save nickname
+    if (this.nicknameSaveBtn) {
+      this.nicknameSaveBtn.addEventListener("click", () => this._saveNickname());
+    }
+    if (this.nicknameInput) {
+      this.nicknameInput.addEventListener("keydown", e => { if (e.key === "Enter") this._saveNickname(); });
+    }
+
+    this._syncNicknameToMP();
+  }
+
+  _saveNickname() {
+    const name = this.nicknameInput?.value?.trim();
+    if (!name) return;
+    this.storage?.setNickname(name);
+    // Also sync to hidden auth-name-input (for Firebase registration)
+    const authName = document.getElementById("auth-name-input");
+    if (authName) authName.value = name;
+    this._syncNicknameToMP();
+    if (this.nicknameSaveBtn) {
+      this.nicknameSaveBtn.textContent = "✓";
+      setTimeout(() => { if (this.nicknameSaveBtn) this.nicknameSaveBtn.textContent = "✓"; }, 800);
+    }
+  }
+
+  _setHeaderAvatar(emoji) {
+    if (this.headerAvatar) this.headerAvatar.textContent = emoji;
+  }
+
+  _syncNicknameToMP() {
+    const nick = this.storage?.getNickname() || "";
+    if (this.mpModalNickname && !this.mpModalNickname._userEdited) {
+      this.mpModalNickname.value = nick;
+    }
+    const joinNick = document.getElementById("mp-join-nickname");
+    if (joinNick && !joinNick._userEdited) joinNick.value = nick;
   }
 
   // --- Auth modal ---
