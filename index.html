@@ -55,6 +55,10 @@
               <span class="mp-label">Tema</span>
               <strong id="mp-room-topic-display" class="mp-room-value">–</strong>
             </div>
+            <div class="mp-room-cell">
+              <span class="mp-label">Način</span>
+              <strong id="mp-room-mode-display" class="mp-room-value">–</strong>
+            </div>
             <button id="multiplayer-leave" class="secondary-button mp-leave-btn" type="button">Zapusti ✕</button>
           </div>
           <div id="mp-confirm" class="mp-confirm" hidden>
@@ -102,8 +106,10 @@
         <button class="game-mode-btn" data-mode="zen" type="button">Zen 🧘</button>
         <button class="game-mode-btn" data-mode="riddle" type="button">🎭 Uganka</button>
         <button class="game-mode-btn" data-mode="random" type="button">🎲 Naključno</button>
+        <button class="game-mode-btn" data-mode="reveal" type="button">👁 Razkrivanje</button>
       </div>
       <p class="game-mode-desc" id="game-mode-desc"></p>
+      <div id="reveal-bar" class="reveal-bar" hidden></div>
 
       <!-- Timer (time attack only) -->
       <div id="game-timer" class="game-timer" hidden>
@@ -214,6 +220,7 @@
                 <button class="mp-gamemode-btn" data-mode="zen" type="button">🧘 Zen</button>
                 <button class="mp-gamemode-btn" data-mode="riddle" type="button">🎭 Uganka</button>
                 <button class="mp-gamemode-btn" data-mode="random" type="button">🎲 Naključno</button>
+                <button class="mp-gamemode-btn" data-mode="reveal" type="button">👁 Razkrivanje</button>
               </div>
             </div>
           <button id="mp-modal-create-btn" class="secondary-button mp-modal-confirm-btn" type="button">Ustvari sobo →</button>
@@ -317,6 +324,6 @@
       </div>
     </div>
 
-    <script type="module" src="js/app.js?v=20260627-01"></script>
+    <script type="module" src="js/app.js?v=20260627-02"></script>
   </body>
 </html>

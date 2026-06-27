@@ -1,7 +1,7 @@
-﻿import { Board } from "./board.js?v=20260627-01";
-import { Keyboard } from "./keyboard.js?v=20260627-01";
-import { WordleEngine } from "./wordleEngine.js?v=20260627-01";
-import { Animations } from "./animations.js?v=20260627-01";
+﻿import { Board } from "./board.js?v=20260627-02";
+import { Keyboard } from "./keyboard.js?v=20260627-02";
+import { WordleEngine } from "./wordleEngine.js?v=20260627-02";
+import { Animations } from "./animations.js?v=20260627-02";
 
 export class Game {
   /**
@@ -44,6 +44,8 @@ export class Game {
     this.gameStartTime = Date.now();
     this.currentRiddle = null;
     this.bestGreenCount = 0;
+    this._revealInterval = null;
+    this._revealedPositions = new Set();
     window.addEventListener("beforeunload", () => this.persistState());
     window.addEventListener("pagehide", () => this.persistState());
     try { window.game = this; } catch (e) {}
@@ -157,6 +159,7 @@ export class Game {
       }
       this.ui && this.ui.showMessage(`Čestitke! Zmaga. ⏱ ${this.getElapsed()} · ${row + 1} ugibanj`, "info", 3500);
       this.ui?._stopLiveStats();
+      this._stopReveal();
       this.gameOver = true;
       if (this.mode === "multiplayer" && this.multiplayer) {
         this.multiplayer.sendPlayerFinished(true, row + 1, this.bestGreenCount);
@@ -197,6 +200,7 @@ export class Game {
         4200
       );
       this.ui?._stopLiveStats();
+      this._stopReveal();
       this.gameOver = true;
       if (this.mode === "multiplayer" && this.multiplayer) {
         this.multiplayer.sendPlayerFinished(false, this.rows, this.bestGreenCount);
@@ -254,6 +258,7 @@ export class Game {
     this.boardStates = [];
     this.gameStartTime = Date.now();
     this.bestGreenCount = 0;
+    this._revealedPositions = new Set();
     this.board.rows = this.rows;
     this.board.cols = this.cols;
     this.board.create();
@@ -318,20 +323,42 @@ export class Game {
   setGameMode(mode) {
     if (this.gameMode === mode && !this.gameOver) return;
     this.stopTimer();
+    this._stopReveal();
     this.gameMode = mode;
     this.hardConstraints = { greens: {}, yellows: new Set() };
     this.timeAttackScore = 0;
     this.rows = mode === "zen" ? 9 : 6;
     localStorage.setItem("besedko-gamemode", mode);
     if (mode !== "riddle") {
-      const answer = mode === "random"
+      const answer = (mode === "random" || mode === "reveal")
         ? this._randomLengthAnswer()
         : (this.dictionary?.getDailyAnswer() || this.dictionary?.getRandomAnswer() || this.answer);
       this.restart([answer]);
       if (mode === "timeattack") this.startTimer();
+      if (mode === "reveal") this._startReveal();
     }
     this.ui?.setGameMode(mode);
     this.ui?.showModeToast(mode);
+  }
+
+  _startReveal() {
+    this._stopReveal();
+    this._revealedPositions = new Set();
+    this.ui?._updateRevealBar();
+    this._revealInterval = setInterval(() => {
+      if (this.gameOver) { this._stopReveal(); return; }
+      const all = [...Array(this.cols).keys()];
+      const unrevealed = all.filter(i => !this._revealedPositions.has(i));
+      if (unrevealed.length === 0) { this._stopReveal(); return; }
+      const pos = unrevealed[Math.floor(Math.random() * unrevealed.length)];
+      this._revealedPositions.add(pos);
+      this.ui?._updateRevealBar();
+    }, 5000);
+  }
+
+  _stopReveal() {
+    if (this._revealInterval) { clearInterval(this._revealInterval); this._revealInterval = null; }
+    this._revealedPositions = new Set();
   }
 
   startTimer() {
@@ -439,6 +466,7 @@ export class Game {
     );
     if (answers.length > 0) this.restart(answers);
     if (this.gameMode === "timeattack") this.startTimer();
+    if (this.gameMode === "reveal") this._startReveal();
     this.ui?.setGameMode(this.gameMode);
     if (config.riddleData && this.gameMode === "riddle" && this.ui?.riddleGame) {
       this.ui.riddleGame.start(config.riddleData);

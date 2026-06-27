@@ -101,10 +101,12 @@ export class Multiplayer {
       join_request: null,
     });
 
+    this.game.gameStartTime = Date.now();
     this.ui?.setRoomTopic(this.game.topic);
     this.ui?.setOpponentNickname(this.peerNickname);
     this.ui?.showOpponentBoard();
     this.ui?.hideConfirmDialog();
+    this.ui?.showMpEmojiPanel();
     this.ui?.setMultiplayerStatus(`${this.peerNickname} se je pridružil/a! Igra se začne.`);
   }
 

@@ -1,5 +1,5 @@
-﻿import { Multiplayer } from "./multiplayer.js?v=20260627-01";
-import { config } from "./config.js?v=20260627-01";
+﻿import { Multiplayer } from "./multiplayer.js?v=20260627-02";
+import { config } from "./config.js?v=20260627-02";
 
 export class UI {
   constructor(storage) {
@@ -121,6 +121,15 @@ export class UI {
     this.liveGuessesEl = document.getElementById("live-guesses");
     this.liveStartedEl = document.getElementById("live-started");
     this._liveStatsInterval = null;
+
+    // Reveal bar
+    this.revealBarEl = document.getElementById("reveal-bar");
+
+    // MP mode display
+    this.mpRoomModeDisplay = document.getElementById("mp-room-mode-display");
+
+    // Tile swap
+    this._swapSelectedCol = null;
 
     // MP emoji panel & toast
     this.mpEmojiPanel = document.getElementById("mp-emoji-panel");
@@ -280,6 +289,8 @@ export class UI {
       if (this.mpRematchAcceptBtn) this.mpRematchAcceptBtn.hidden = true;
       if (this.mpRematchNotification) this.mpRematchNotification.hidden = true;
     });
+
+    this._initTileSwap();
   }
 
   /** Build topic toggle buttons from dictionary. */
@@ -568,6 +579,62 @@ export class UI {
     if (this.mpRematchBtn) this.mpRematchBtn.hidden = true;
   }
 
+  // --- Reveal bar ---
+
+  _updateRevealBar() {
+    if (!this.revealBarEl || !this.game) return;
+    const answer = this.game.answer || "";
+    const revealed = this.game._revealedPositions || new Set();
+    this.revealBarEl.innerHTML = "";
+    [...answer].forEach((letter, i) => {
+      const tile = document.createElement("div");
+      tile.className = "reveal-tile" + (revealed.has(i) ? " revealed" : "");
+      tile.textContent = revealed.has(i) ? letter : "";
+      this.revealBarEl.appendChild(tile);
+    });
+  }
+
+  // --- Tile swap (green letter swap) ---
+
+  _initTileSwap() {
+    const boardEl = document.getElementById("board");
+    if (!boardEl) return;
+
+    boardEl.addEventListener("click", (e) => {
+      const tile = e.target.closest(".tile");
+      if (!tile || !this.game || this.game.gameOver) return;
+      const rowTiles = this.game.board?.tiles?.[this.game.currentRow];
+      if (!rowTiles) return;
+      const col = rowTiles.indexOf(tile);
+      if (col === -1 || !tile.textContent) return;
+
+      if (this._swapSelectedCol === null) {
+        this._swapSelectedCol = col;
+        tile.classList.add("swap-selected");
+      } else if (this._swapSelectedCol === col) {
+        tile.classList.remove("swap-selected");
+        this._swapSelectedCol = null;
+      } else {
+        const prevTile = rowTiles[this._swapSelectedCol];
+        const a = tile.textContent;
+        const b = prevTile.textContent;
+        tile.textContent = b;
+        prevTile.textContent = a;
+        prevTile.classList.remove("swap-selected");
+        this._swapSelectedCol = null;
+      }
+    });
+
+    // Deselect on any keyboard input
+    document.addEventListener("keydown", () => {
+      if (this._swapSelectedCol !== null) {
+        this.game?.board?.tiles?.[this.game.currentRow]?.[this._swapSelectedCol]
+          ?.classList.remove("swap-selected");
+        this._swapSelectedCol = null;
+      }
+    });
+  }
+
   // --- Auth modal ---
 
   registerAuthCallbacks(callbacks) {
@@ -633,6 +700,17 @@ export class UI {
     zen:        { desc: "9 vrstic, brez poraza — igra se nadaljuje z novo besedo.", toast: "Zen način 🧘 — sprosti se, ni poraza." },
     riddle:     { desc: "Ugani besedo ali zvezo iz namigov — čim manj namigov, tem boljše!", toast: "Uganka 🎭 — ugani iz namigov!" },
     random:     { desc: "Naključna beseda — 4, 5 ali 6 črk. Tabela se prilagodi dolžini.", toast: "Naključni način 🎲 — nova dolžina vsako igro!" },
+    reveal:     { desc: "Vsakih 5 sekund se razkrije ena črka. Ugani čim prej!", toast: "Razkrivanje 👁 — beseda se počasi razkriva!" },
+  };
+
+  static _modeLabels = {
+    classic:    "Klasično",
+    hard:       "🔥 Težko",
+    timeattack: "⏱ Čas",
+    zen:        "🧘 Zen",
+    riddle:     "🎭 Uganka",
+    random:     "🎲 Naključno",
+    reveal:     "👁 Razkrivanje",
   };
 
   setGameMode(mode) {
@@ -641,9 +719,13 @@ export class UI {
     });
     const info = UI._modeInfo[mode] || UI._modeInfo.classic;
     if (this.gameModeDesc) this.gameModeDesc.textContent = info.desc;
+    if (this.mpRoomModeDisplay) {
+      this.mpRoomModeDisplay.textContent = UI._modeLabels[mode] || mode;
+    }
 
     const isRiddle = mode === "riddle";
     const isTimeAttack = mode === "timeattack";
+    const isReveal = mode === "reveal";
 
     if (this.boardsContainer) this.boardsContainer.style.display = isRiddle ? "none" : "";
     const kb = document.getElementById("keyboard");
@@ -652,6 +734,8 @@ export class UI {
     if (this.gameTimerEl) this.gameTimerEl.hidden = !isTimeAttack;
     if (this.riddlePanel) this.riddlePanel.hidden = !isRiddle;
     if (this.liveStatsEl) this.liveStatsEl.hidden = isTimeAttack;
+    if (this.revealBarEl) this.revealBarEl.hidden = !isReveal;
+    if (isReveal) this._updateRevealBar();
 
     if (isRiddle && this.riddleGame) this.startRiddle();
     else if (!isRiddle) this._startLiveStats();
@@ -700,6 +784,13 @@ export class UI {
     this._stopLiveStats();
     this._updateLiveStats();
     this._liveStatsInterval = setInterval(() => this._updateLiveStats(), 1000);
+    // Re-sync immediately when tab becomes visible (browsers throttle background setInterval)
+    if (!this._visibilityHandler) {
+      this._visibilityHandler = () => {
+        if (!document.hidden) this._updateLiveStats();
+      };
+      document.addEventListener("visibilitychange", this._visibilityHandler);
+    }
   }
 
   _stopLiveStats() {
