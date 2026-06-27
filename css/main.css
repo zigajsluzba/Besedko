@@ -354,7 +354,7 @@ main.mp-active .keyboard {
   flex-wrap: wrap;
   justify-content: center;
   padding: 8px 12px;
-  background: rgba(255,255,255,0.03);
+  background: var(--bg-3);
   border: 1px solid var(--border);
   border-radius: 10px;
 }
@@ -370,7 +370,7 @@ main.mp-active .keyboard {
 .mp-room-value {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #e8e8e8;
+  color: var(--text);
   letter-spacing: 0.08em;
 }
 
@@ -415,6 +415,71 @@ main.mp-active .keyboard {
 
 .mp-btn-yes:hover {
   background: rgba(83,141,78,0.25);
+}
+
+/* ─── Emoji panel ────────────────────────────── */
+.mp-emoji-panel {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 0;
+}
+.mp-emoji-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 6px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background 100ms, transform 80ms;
+  line-height: 1;
+}
+.mp-emoji-btn:hover { background: var(--bg-3); transform: scale(1.15); }
+.mp-emoji-btn:active { transform: scale(0.95); }
+
+/* ─── Emoji toast overlay ────────────────────── */
+.mp-emoji-toast-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 300;
+}
+.mp-emoji-toast-big {
+  font-size: 5rem;
+  line-height: 1;
+  animation: emojiPop 2.2s forwards;
+}
+.mp-emoji-toast-from {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  animation: emojiPop 2.2s forwards;
+}
+@keyframes emojiPop {
+  0%   { transform: scale(0.2); opacity: 0; }
+  15%  { transform: scale(1.25); opacity: 1; }
+  30%  { transform: scale(1); opacity: 1; }
+  75%  { opacity: 1; }
+  100% { opacity: 0; transform: scale(0.8); }
+}
+
+/* ─── Rematch area ───────────────────────────── */
+.mp-rematch-area {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+.mp-rematch-notification {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-align: center;
 }
 
 .mp-btn-no {
@@ -609,11 +674,19 @@ main.mp-active .board-label {
 .game-mode-btn.active[data-mode="timeattack"]  { background: #c94040; color: #fff; border-color: #c94040; }
 .game-mode-btn.active[data-mode="zen"]         { background: #4a9e6e; color: #fff; border-color: #4a9e6e; }
 
-/* Hide riddle mode button in multiplayer; hide strip + desc + hints until room is active */
+/* Multiplayer: hide riddle btn; hide strip/desc/hints pre-room; lock strip during game */
 main.mp-mode .game-mode-btn[data-mode="riddle"]  { display: none; }
 main.mp-mode:not(.mp-active) .game-mode-strip    { display: none; }
 main.mp-mode:not(.mp-active) .game-mode-desc     { display: none; }
 main.mp-mode:not(.mp-active) .keyboard-actions   { display: none; }
+main.mp-active .game-mode-strip { pointer-events: none; opacity: 0.45; }
+
+/* Mobile MP: opponent board on top, smaller */
+@media (max-width: 640px) {
+  main.mp-active .boards-container { flex-direction: column; align-items: center; }
+  main.mp-active .board-wrapper--opponent { order: -1; }
+  main.mp-active .board--opponent .tile { width: 34px; height: 34px; font-size: 1rem; }
+}
 
 .game-mode-desc {
   font-size: 0.76rem;

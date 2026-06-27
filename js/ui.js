@@ -1,5 +1,5 @@
-﻿import { Multiplayer } from "./multiplayer.js?v=20260626-23";
-import { config } from "./config.js?v=20260626-23";
+﻿import { Multiplayer } from "./multiplayer.js?v=20260627-01";
+import { config } from "./config.js?v=20260627-01";
 
 export class UI {
   constructor(storage) {
@@ -122,6 +122,19 @@ export class UI {
     this.liveStartedEl = document.getElementById("live-started");
     this._liveStatsInterval = null;
 
+    // MP emoji panel & toast
+    this.mpEmojiPanel = document.getElementById("mp-emoji-panel");
+    this.mpEmojiToast = document.getElementById("mp-emoji-toast");
+    this.mpEmojiToastEmoji = document.getElementById("mp-emoji-toast-emoji");
+    this.mpEmojiToastFrom = document.getElementById("mp-emoji-toast-from");
+    this._emojiToastTimer = null;
+
+    // MP rematch area
+    this.mpRematchArea = document.getElementById("mp-rematch-area");
+    this.mpRematchBtn = document.getElementById("mp-rematch-btn");
+    this.mpRematchNotification = document.getElementById("mp-rematch-notification");
+    this.mpRematchAcceptBtn = document.getElementById("mp-rematch-accept-btn");
+
     this.hideTimer = null;
     this._authCallbacks = {};
     this.register();
@@ -228,6 +241,9 @@ export class UI {
     this.mpJoinCode?.addEventListener("input", (e) => {
       e.target.value = e.target.value.toUpperCase();
     });
+    this.mpJoinCode?.addEventListener("focus", () => {
+      this.mpJoinCode.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
 
     // Settings buttons (now inside create modal)
     this.mpLengthButtons.forEach((btn) => {
@@ -241,6 +257,28 @@ export class UI {
         this.selectedRows = parseInt(btn.dataset.rows, 10) || 6;
         this.mpRowsButtons.forEach((b) => b.classList.toggle("active", b === btn));
       });
+    });
+
+    // Emoji buttons
+    this.mpEmojiPanel?.querySelectorAll(".mp-emoji-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        this.game?.multiplayer?.sendEmoji(btn.dataset.emoji);
+      });
+    });
+
+    // Rematch buttons
+    this.mpRematchBtn?.addEventListener("click", () => {
+      this.game?.multiplayer?.sendRematchRequest();
+      if (this.mpRematchBtn) this.mpRematchBtn.hidden = true;
+      if (this.mpRematchNotification) {
+        this.mpRematchNotification.textContent = "Čakam na nasprotnika...";
+        this.mpRematchNotification.hidden = false;
+      }
+    });
+    this.mpRematchAcceptBtn?.addEventListener("click", () => {
+      this.game?.multiplayer?.acceptRematch();
+      if (this.mpRematchAcceptBtn) this.mpRematchAcceptBtn.hidden = true;
+      if (this.mpRematchNotification) this.mpRematchNotification.hidden = true;
     });
   }
 
@@ -427,6 +465,8 @@ export class UI {
     if (this.mpRoomCodeDisplay) this.mpRoomCodeDisplay.textContent = code || "–";
     if (!inRoom) {
       this.hideConfirmDialog();
+      this.hideMpEmojiPanel();
+      this.hideMpRematch();
       if (this.mpRoomTopicDisplay) this.mpRoomTopicDisplay.textContent = "–";
     }
   }
@@ -471,6 +511,61 @@ export class UI {
 
   setOpponentNickname(name) {
     if (this.opponentLabel) this.opponentLabel.textContent = name || "Nasprotnik";
+  }
+
+  // --- MP emoji ---
+
+  showMpEmojiPanel() {
+    this.mpEmojiPanel?.removeAttribute("hidden");
+  }
+
+  hideMpEmojiPanel() {
+    this.mpEmojiPanel?.setAttribute("hidden", "");
+  }
+
+  showEmojiToast(emoji, fromName) {
+    if (!this.mpEmojiToast) return;
+    if (this._emojiToastTimer) clearTimeout(this._emojiToastTimer);
+
+    if (this.mpEmojiToastEmoji) this.mpEmojiToastEmoji.textContent = emoji;
+    if (this.mpEmojiToastFrom) this.mpEmojiToastFrom.textContent = fromName || "";
+
+    // Re-trigger animation by replacing element
+    const big = this.mpEmojiToastEmoji;
+    const small = this.mpEmojiToastFrom;
+    if (big) { big.style.animation = "none"; void big.offsetWidth; big.style.animation = ""; }
+    if (small) { small.style.animation = "none"; void small.offsetWidth; small.style.animation = ""; }
+
+    this.mpEmojiToast.removeAttribute("hidden");
+    this._emojiToastTimer = setTimeout(() => {
+      this.mpEmojiToast?.setAttribute("hidden", "");
+    }, 2400);
+  }
+
+  // --- MP rematch ---
+
+  showMpRematch() {
+    if (this.mpRematchArea) this.mpRematchArea.removeAttribute("hidden");
+    if (this.mpRematchBtn) this.mpRematchBtn.hidden = false;
+    if (this.mpRematchNotification) this.mpRematchNotification.hidden = true;
+    if (this.mpRematchAcceptBtn) this.mpRematchAcceptBtn.hidden = true;
+  }
+
+  hideMpRematch() {
+    this.mpRematchArea?.setAttribute("hidden", "");
+    if (this.mpRematchBtn) this.mpRematchBtn.hidden = false;
+    if (this.mpRematchNotification) this.mpRematchNotification.hidden = true;
+    if (this.mpRematchAcceptBtn) this.mpRematchAcceptBtn.hidden = true;
+  }
+
+  showRematchRequest(fromName) {
+    if (this.mpRematchArea) this.mpRematchArea.removeAttribute("hidden");
+    if (this.mpRematchNotification) {
+      this.mpRematchNotification.textContent = `${fromName} želi novo igro.`;
+      this.mpRematchNotification.hidden = false;
+    }
+    if (this.mpRematchAcceptBtn) this.mpRematchAcceptBtn.hidden = false;
+    if (this.mpRematchBtn) this.mpRematchBtn.hidden = true;
   }
 
   // --- Auth modal ---

@@ -1,7 +1,4 @@
 export class Multiplayer {
-  /**
-   * @param {{ game: Game, ui: UI, firebaseUrl: string }} opts
-   */
   constructor({ game, ui, firebaseUrl }) {
     this.game = game;
     this.ui = ui;
@@ -18,6 +15,10 @@ export class Multiplayer {
     this.sse = null;
     this.roomData = {};
     this._opponentFinishedShown = false;
+    this._winnerShown = false;
+    this._lastEmojiAt = 0;
+    this._lastRematchReqAt = 0;
+    this._lastRematchAt = 0;
 
     if (!this.available) {
       this.ui?.setMultiplayerStatus(
@@ -36,6 +37,10 @@ export class Multiplayer {
     this.isHost = true;
     this.peerConnected = false;
     this._opponentFinishedShown = false;
+    this._winnerShown = false;
+    this._lastEmojiAt = 0;
+    this._lastRematchReqAt = 0;
+    this._lastRematchAt = 0;
     this.roomData = {};
     this.persistSession();
 
@@ -49,7 +54,6 @@ export class Multiplayer {
     this.ui?.setRoomCode(this.roomId);
     this.ui?.setPlayerName(this.nickname);
     this.ui?.setMultiplayerStatus(`Soba ${this.roomId} čaka na gosta...`);
-    console.info("[MP] Room created:", this.roomId);
     return this.roomId;
   }
 
@@ -59,6 +63,10 @@ export class Multiplayer {
     this.isHost = false;
     this.peerConnected = false;
     this._opponentFinishedShown = false;
+    this._winnerShown = false;
+    this._lastEmojiAt = 0;
+    this._lastRematchReqAt = 0;
+    this._lastRematchAt = 0;
     this.roomData = {};
     this.persistSession();
 
@@ -98,7 +106,6 @@ export class Multiplayer {
     this.ui?.showOpponentBoard();
     this.ui?.hideConfirmDialog();
     this.ui?.setMultiplayerStatus(`${this.peerNickname} se je pridružil/a! Igra se začne.`);
-    console.info("[MP] Guest confirmed:", this.peerNickname);
   }
 
   async rejectGuest() {
@@ -130,12 +137,15 @@ export class Multiplayer {
     this.peerConnected = false;
     this.peerNickname = null;
     this._opponentFinishedShown = false;
+    this._winnerShown = false;
     this.roomData = {};
     this.clearSession();
     this.ui?.setRoomCode(null);
     this.ui?.setMultiplayerStatus("Zapustil/a si sobo.");
     this.ui?.hideOpponentBoard();
     this.ui?.hideConfirmDialog();
+    this.ui?.hideMpRematch();
+    this.ui?.hideMpEmojiPanel();
   }
 
   // ─── SSE / Firebase real-time ─────────────────────────────────────────────
@@ -163,7 +173,6 @@ export class Multiplayer {
     const { path, data } = event;
 
     if (data === null && path === "/") {
-      // Room deleted (host left)
       if (!this.isHost && this.roomId) {
         this.peerConnected = false;
         this.peerNickname = null;
@@ -173,11 +182,11 @@ export class Multiplayer {
         this.ui?.setMultiplayerStatus("Gostitelj je zapustil sobo.");
         this.ui?.hideOpponentBoard();
         this.ui?.hideConfirmDialog();
+        this.ui?.hideMpRematch();
       }
       return;
     }
 
-    // Merge update into local roomData
     if (path === "/") {
       this.roomData = data || {};
     } else {
@@ -209,8 +218,11 @@ export class Multiplayer {
       this.peerConnected = false;
       this.peerNickname = null;
       this._opponentFinishedShown = false;
+      this._winnerShown = false;
       this.ui?.setMultiplayerStatus("Nasprotnik je zapustil sobo.");
       this.ui?.hideOpponentBoard();
+      this.ui?.hideMpRematch();
+      this.ui?.hideMpEmojiPanel();
     }
 
     // GUEST: host confirmed → game config arrived
@@ -225,7 +237,13 @@ export class Multiplayer {
       this.ui?.setOpponentNickname(this.peerNickname);
       this.ui?.showOpponentBoard();
       this.ui?.hideConfirmDialog();
+      this.ui?.showMpEmojiPanel();
       this.ui?.setMultiplayerStatus("Igra se je začela. Srečno!");
+    }
+
+    // Show emoji panel when game starts (host side)
+    if (this.isHost && this.peerConnected && d.status === "playing") {
+      this.ui?.showMpEmojiPanel();
     }
 
     // Board updates from opponent
@@ -236,6 +254,8 @@ export class Multiplayer {
       }
 
       const oppFinished = this.isHost ? d.guest?.finished : d.host?.finished;
+      const myFinished = this.isHost ? d.host?.finished : d.guest?.finished;
+
       if (oppFinished && !this._opponentFinishedShown) {
         this._opponentFinishedShown = true;
         const name = this.peerNickname || "Nasprotnik";
@@ -243,6 +263,51 @@ export class Multiplayer {
         const n = oppFinished.guessCount;
         this.ui?.setMultiplayerStatus(`${name} je ${verb} v ${n} ${n === 1 ? "ugibu" : "ugibih"}.`);
       }
+
+      // Determine winner when both finished
+      if (myFinished && oppFinished && !this._winnerShown) {
+        this._winnerShown = true;
+        const result = this._determineWinner(myFinished, oppFinished);
+        const name = this.peerNickname || "Nasprotnik";
+        if (result === "me") this.ui?.setMultiplayerStatus(`🏆 Zmaga! Čestitke!`);
+        else if (result === "opponent") this.ui?.setMultiplayerStatus(`😔 ${name} je zmagal/a.`);
+        else this.ui?.setMultiplayerStatus(`🤝 Izenačeno!`);
+      }
+    }
+
+    // Emoji toast
+    const emojiToast = d.emoji_toast;
+    if (emojiToast?.at && emojiToast.at > this._lastEmojiAt) {
+      this._lastEmojiAt = emojiToast.at;
+      if (emojiToast.from !== this.nickname) {
+        this.ui?.showEmojiToast(emojiToast.emoji, emojiToast.from);
+      }
+    }
+
+    // Rematch request from opponent
+    const rematchReq = d.rematch_req;
+    if (rematchReq?.at && rematchReq.at > this._lastRematchReqAt) {
+      this._lastRematchReqAt = rematchReq.at;
+      const byMe = (rematchReq.by === "host") === this.isHost;
+      if (!byMe) {
+        this.ui?.showRematchRequest(this.peerNickname || "Nasprotnik");
+      }
+    }
+
+    // HOST: guest accepted rematch
+    if (this.isHost && d.rematch_accept?.at && d.rematch_accept.at > this._lastRematchAt) {
+      this._lastRematchAt = d.rematch_accept.at;
+      this._executeRematch();
+    }
+
+    // GUEST: host started new game (rematch_at changed)
+    if (!this.isHost && d.rematch_at && d.rematch_at > this._lastRematchAt) {
+      this._lastRematchAt = d.rematch_at;
+      try { this.game.receiveGameConfig(d.game_config); } catch (e) {}
+      this._opponentFinishedShown = false;
+      this._winnerShown = false;
+      this.ui?.hideMpRematch();
+      this.ui?.setMultiplayerStatus("Nova igra — srečno!");
     }
   }
 
@@ -254,10 +319,80 @@ export class Multiplayer {
     await this._fbPatch(`rooms/${this.roomId}/${key}`, { board: snapshot });
   }
 
-  async sendPlayerFinished(won, guessCount) {
+  async sendPlayerFinished(won, guessCount, greenCount) {
     if (!this.roomId) return;
     const key = this.isHost ? "host" : "guest";
-    await this._fbPatch(`rooms/${this.roomId}/${key}`, { finished: { won, guessCount } });
+    await this._fbPatch(`rooms/${this.roomId}/${key}`, {
+      finished: { won, guessCount, greenCount: greenCount || 0, finishedAt: Date.now() },
+    });
+  }
+
+  async sendEmoji(emoji) {
+    if (!this.peerConnected || !this.roomId) return;
+    await this._fbPatch(`rooms/${this.roomId}`, {
+      emoji_toast: { from: this.nickname, emoji, at: Date.now() },
+    });
+  }
+
+  async sendRematchRequest() {
+    if (!this.peerConnected || !this.roomId) return;
+    const by = this.isHost ? "host" : "guest";
+    await this._fbPatch(`rooms/${this.roomId}`, {
+      rematch_req: { by, at: Date.now() },
+    });
+    this.ui?.setMultiplayerStatus("Zahteva za novo igro poslana...");
+  }
+
+  async acceptRematch() {
+    if (!this.roomId) return;
+    if (this.isHost) {
+      this._executeRematch();
+    } else {
+      await this._fbPatch(`rooms/${this.roomId}`, {
+        rematch_accept: { at: Date.now() },
+      });
+    }
+  }
+
+  async _executeRematch() {
+    if (!this.isHost) return;
+    const len = this.game.cols || 5;
+    const topic = this.game.topic || "mešano";
+    const newAnswer = this.game.dictionary?.getRandomByTopic(topic, len) ||
+      this.game.dictionary?.getDailyAnswer() || this.game.answer;
+    this.game.restart([newAnswer]);
+    const config = this.game.getGameConfig();
+
+    const hostNick = this.roomData.host?.nickname || this.nickname;
+    const guestNick = this.roomData.guest?.nickname || this.peerNickname;
+
+    await this._fbPatch(`rooms/${this.roomId}`, {
+      game_config: config,
+      rematch_req: null,
+      rematch_accept: null,
+      rematch_at: Date.now(),
+      host: { nickname: hostNick, board: null, finished: null },
+      guest: { nickname: guestNick, board: null, finished: null },
+    });
+
+    this._opponentFinishedShown = false;
+    this._winnerShown = false;
+    this.ui?.hideMpRematch();
+    this.ui?.setMultiplayerStatus("Nova igra — srečno!");
+  }
+
+  // ─── Winner logic ─────────────────────────────────────────────────────────
+
+  _determineWinner(me, opp) {
+    if (me.won && !opp.won) return "me";
+    if (!me.won && opp.won) return "opponent";
+    if (me.won && opp.won) {
+      if (me.guessCount !== opp.guessCount) return me.guessCount < opp.guessCount ? "me" : "opponent";
+      return (me.finishedAt || 0) <= (opp.finishedAt || 0) ? "me" : "opponent";
+    }
+    // Both lost — compare green count
+    if (me.greenCount !== opp.greenCount) return me.greenCount > opp.greenCount ? "me" : "opponent";
+    return "tie";
   }
 
   // ─── Firebase REST ────────────────────────────────────────────────────────
@@ -274,7 +409,6 @@ export class Multiplayer {
   }
 
   async _fbPatch(path, data) {
-    // Remove null values explicitly via PUT on sub-paths
     const nullKeys = Object.entries(data).filter(([, v]) => v === null);
     const rest = Object.fromEntries(Object.entries(data).filter(([, v]) => v !== null));
 

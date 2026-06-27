@@ -1,7 +1,7 @@
-﻿import { Board } from "./board.js?v=20260626-7";
-import { Keyboard } from "./keyboard.js?v=20260626-23";
-import { WordleEngine } from "./wordleEngine.js?v=20260626-7";
-import { Animations } from "./animations.js?v=20260626-7";
+﻿import { Board } from "./board.js?v=20260627-01";
+import { Keyboard } from "./keyboard.js?v=20260627-01";
+import { WordleEngine } from "./wordleEngine.js?v=20260627-01";
+import { Animations } from "./animations.js?v=20260627-01";
 
 export class Game {
   /**
@@ -43,6 +43,7 @@ export class Game {
     this.persistKey = "game-state";
     this.gameStartTime = Date.now();
     this.currentRiddle = null;
+    this.bestGreenCount = 0;
     window.addEventListener("beforeunload", () => this.persistState());
     window.addEventListener("pagehide", () => this.persistState());
     try { window.game = this; } catch (e) {}
@@ -117,6 +118,8 @@ export class Game {
 
     // Track logical board state for multiplayer broadcast
     this.boardStates[row] = states.map((s) => ({ state: s }));
+    const rowGreens = states.filter(s => s === "correct").length;
+    if (rowGreens > this.bestGreenCount) this.bestGreenCount = rowGreens;
     if (this.mode === "multiplayer" && this.multiplayer) {
       this.multiplayer.sendBoardUpdate(this.boardStates.slice());
     }
@@ -156,7 +159,8 @@ export class Game {
       this.ui?._stopLiveStats();
       this.gameOver = true;
       if (this.mode === "multiplayer" && this.multiplayer) {
-        this.multiplayer.sendPlayerFinished(true, row + 1);
+        this.multiplayer.sendPlayerFinished(true, row + 1, this.bestGreenCount);
+        this.ui?.showMpRematch();
       }
       this.persistState();
       return;
@@ -195,7 +199,8 @@ export class Game {
       this.ui?._stopLiveStats();
       this.gameOver = true;
       if (this.mode === "multiplayer" && this.multiplayer) {
-        this.multiplayer.sendPlayerFinished(false, this.rows);
+        this.multiplayer.sendPlayerFinished(false, this.rows, this.bestGreenCount);
+        this.ui?.showMpRematch();
       }
       this.persistState();
       return;
@@ -248,6 +253,7 @@ export class Game {
     this.hintUsed = false;
     this.boardStates = [];
     this.gameStartTime = Date.now();
+    this.bestGreenCount = 0;
     this.board.rows = this.rows;
     this.board.cols = this.cols;
     this.board.create();

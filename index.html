@@ -64,9 +64,34 @@
               <button id="mp-confirm-no" class="secondary-button mp-btn-no" type="button">✕ Zavrni</button>
             </div>
           </div>
+          <!-- Emoji panel -->
+          <div id="mp-emoji-panel" class="mp-emoji-panel" hidden>
+            <button class="mp-emoji-btn" data-emoji="😀" type="button">😀</button>
+            <button class="mp-emoji-btn" data-emoji="😂" type="button">😂</button>
+            <button class="mp-emoji-btn" data-emoji="😎" type="button">😎</button>
+            <button class="mp-emoji-btn" data-emoji="👍" type="button">👍</button>
+            <button class="mp-emoji-btn" data-emoji="👏" type="button">👏</button>
+            <button class="mp-emoji-btn" data-emoji="❤️" type="button">❤️</button>
+            <button class="mp-emoji-btn" data-emoji="😭" type="button">😭</button>
+            <button class="mp-emoji-btn" data-emoji="🤔" type="button">🤔</button>
+            <button class="mp-emoji-btn" data-emoji="🔥" type="button">🔥</button>
+            <button class="mp-emoji-btn" data-emoji="🎉" type="button">🎉</button>
+          </div>
+          <!-- Rematch -->
+          <div id="mp-rematch-area" class="mp-rematch-area" hidden>
+            <button id="mp-rematch-btn" class="secondary-button" type="button">🔄 Ponovna igra</button>
+            <div id="mp-rematch-notification" class="mp-rematch-notification" hidden></div>
+            <button id="mp-rematch-accept-btn" class="secondary-button mp-btn-yes" type="button" hidden>✓ Sprejmi</button>
+          </div>
         </div>
 
         <div id="multiplayer-status" class="multiplayer-status" aria-live="polite"></div>
+      </div>
+
+      <!-- Emoji toast overlay -->
+      <div id="mp-emoji-toast" class="mp-emoji-toast-overlay" hidden>
+        <span id="mp-emoji-toast-emoji" class="mp-emoji-toast-big"></span>
+        <small id="mp-emoji-toast-from" class="mp-emoji-toast-from"></small>
       </div>
 
       <!-- Game mode strip -->
@@ -292,6 +317,6 @@
       </div>
     </div>
 
-    <script type="module" src="js/app.js?v=20260626-23"></script>
+    <script type="module" src="js/app.js?v=20260627-01"></script>
   </body>
 </html>
