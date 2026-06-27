@@ -24,6 +24,8 @@ export class Multiplayer {
     this._lastHintAt = 0;
     this._lastRematchReqAt = 0;
     this._lastRematchAt = 0;
+    this._myResult = null;       // { won, guessCount }
+    this._opponentResult = null; // { won, guessCount }
 
     if (!this.available) {
       this.ui?.setMultiplayerStatus("Multiplayer ni konfiguriran. Nastavi Firebase URL v js/config.js");
@@ -176,6 +178,8 @@ export class Multiplayer {
     this._lastHintAt = 0;
     this._lastRematchReqAt = 0;
     this._lastRematchAt = 0;
+    this._myResult = null;
+    this._opponentResult = null;
   }
 
   // ─── SSE / Firebase real-time ─────────────────────────────────────────────
@@ -311,7 +315,14 @@ export class Multiplayer {
           const bestName = players[bestSid]?.nickname || "Nasprotnik";
           this.ui?.setMultiplayerStatus(`😔 Zmaga: ${bestName}`);
         }
-        this.ui?.showMpRematch();
+      }
+
+      // Check if opponent has finished (via results node)
+      const results = d.results || {};
+      const opSid = Object.keys(results).find(sid => sid !== this.sessionId);
+      if (opSid && results[opSid] && !this._opponentResult) {
+        this._opponentResult = results[opSid];
+        this._checkBothFinished();
       }
     }
 
@@ -352,8 +363,11 @@ export class Multiplayer {
       this._lastRematchAt = d.rematch_at;
       try { this.game.receiveGameConfig(d.game_config); } catch (e) {}
       this._winnerShown = false;
+      this._myResult = null;
+      this._opponentResult = null;
       for (const k of Object.values(this._knownPlayers)) k.finishedShown = false;
       this.ui?.hideMpRematch();
+      this.ui?.hideEndScreen?.();
       this.ui?.setMultiplayerStatus("Nova igra — srečno!");
     }
 
@@ -416,6 +430,19 @@ export class Multiplayer {
     await this._fbPatch(`rooms/${this.roomId}/players/${this.sessionId}`, {
       finished: { won, guessCount, greenCount: greenCount || 0, finishedAt: Date.now() },
     });
+    this._myResult = { won, guessCount };
+    // Write result to Firebase so opponent can see it
+    await this._fbSet(`rooms/${this.roomId}/results/${this.sessionId}`, {
+      won, guessCount, finishedAt: Date.now(),
+    });
+    this._checkBothFinished();
+  }
+
+  _checkBothFinished() {
+    if (!this._myResult || !this._opponentResult) return;
+    // Both finished — show comparison
+    this.ui?.showMpResults(this._myResult, this._opponentResult);
+    this.ui?.showMpRematch();
   }
 
   async sendRiddleProgress(clueCount, guessCount) {
@@ -487,10 +514,15 @@ export class Multiplayer {
         board: null, finished: null, riddle_progress: null,
       });
     }
+    // Clear results node for rematch
+    await this._fbSet(`rooms/${this.roomId}/results`, null);
 
     this._winnerShown = false;
+    this._myResult = null;
+    this._opponentResult = null;
     for (const k of Object.values(this._knownPlayers)) k.finishedShown = false;
     this.ui?.hideMpRematch();
+    this.ui?.hideEndScreen?.();
     this.ui?.setMultiplayerStatus("Nova igra — srečno!");
   }
 

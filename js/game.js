@@ -2,6 +2,7 @@
 import { Keyboard } from "./keyboard.js?v=20260627-03";
 import { WordleEngine } from "./wordleEngine.js?v=20260627-03";
 import { Animations } from "./animations.js?v=20260627-03";
+import { sounds } from "./sounds.js?v=20260627-12";
 
 export class Game {
   /**
@@ -86,6 +87,7 @@ export class Game {
     const guessStr = guess.join("").toUpperCase();
     if (this.dictionary && !this.dictionary.isValid(guessStr)) {
       this.board.shakeRow(this.currentRow);
+      sounds.invalidWord();
       this.ui && this.ui.showMessage("Beseda ni v slovarju.", "error", 1800);
       return;
     }
@@ -109,6 +111,11 @@ export class Game {
       this.board.setTileState(row, index, state);
       this.keyboard.setKeyState(guess[index].toUpperCase(), state);
     });
+
+    // Play sound for the best result in this row
+    if (states.some(s => s === "correct"))       sounds.tileCorrect();
+    else if (states.some(s => s === "present"))  sounds.tilePresent();
+    else                                          sounds.tileAbsent();
 
     // Update hard mode constraints
     if (this.gameMode === "hard") {
@@ -155,14 +162,20 @@ export class Game {
         this.nextRound();
         return;
       }
+      sounds.win();
       this.ui && this.ui.showMessage(`Čestitke! Zmaga. ⏱ ${this.getElapsed()} · ${row + 1} ugibanj`, "info", 3500);
       this.ui?._stopLiveStats();
       this._stopReveal();
       this.gameOver = true;
       if (this.mode === "multiplayer" && this.multiplayer) {
         this.multiplayer.sendPlayerFinished(true, row + 1, this.bestGreenCount);
-        this.ui?.showMpRematch();
+        // showMpRematch is now called from _checkBothFinished in multiplayer.js
       }
+      this.ui?._animateWinRow(row);
+      this.ui?._launchConfetti();
+      setTimeout(() => {
+        this.ui?.showEndScreen({ won: true, guessCount: row + 1, elapsed: this.getElapsed(), mpWaiting: this.mode === "multiplayer" });
+      }, 1800);
       this.persistState();
       return;
     }
@@ -192,6 +205,7 @@ export class Game {
         return;
       }
       this.updateHeaderStats();
+      sounds.lose();
       this.ui && this.ui.showMessage(
         `Igra končana. Beseda: ${this.answer}. ⏱ ${this.getElapsed()}`,
         "error",
@@ -202,8 +216,12 @@ export class Game {
       this.gameOver = true;
       if (this.mode === "multiplayer" && this.multiplayer) {
         this.multiplayer.sendPlayerFinished(false, this.rows, this.bestGreenCount);
-        this.ui?.showMpRematch();
+        // showMpRematch is now called from _checkBothFinished in multiplayer.js
       }
+      this.ui?._animateLoseBoard();
+      setTimeout(() => {
+        this.ui?.showEndScreen({ won: false, word: this.answer, elapsed: this.getElapsed(), mpWaiting: this.mode === "multiplayer" });
+      }, 1200);
       this.persistState();
       return;
     }

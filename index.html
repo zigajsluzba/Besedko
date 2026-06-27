@@ -171,6 +171,22 @@
       </div>
 
       <div id="message" class="message" aria-live="assertive" role="alert"></div>
+
+      <!-- End game overlay -->
+      <div id="end-overlay" class="end-overlay" hidden>
+        <div class="end-card">
+          <div class="end-icon" id="end-icon">🎉</div>
+          <h2 class="end-title" id="end-title">Zmaga!</h2>
+          <p class="end-details" id="end-details"></p>
+          <p class="end-word" id="end-word"></p>
+          <div id="end-mp-wait" class="end-mp-wait" hidden>⏳ Čakam soigralca…</div>
+          <div id="end-mp-results" class="end-mp-results" hidden></div>
+          <div class="end-actions">
+            <button class="secondary-button" id="end-stats-btn" type="button">📊 Statistika</button>
+            <button class="secondary-button mp-modal-confirm-btn" id="end-new-game-btn" type="button">Nova igra ↺</button>
+          </div>
+        </div>
+      </div>
     </main>
 
     <!-- Stats modal -->
@@ -375,6 +391,12 @@
                 <span class="toggle-knob"></span>
               </button>
             </div>
+            <div class="auth-profile-setting">
+              <span class="mp-label">Zvoki</span>
+              <button class="toggle-btn" id="sounds-toggle" type="button" role="switch" aria-checked="true">
+                <span class="toggle-knob"></span>
+              </button>
+            </div>
             <button id="profile-new-game-btn" class="secondary-button" type="button">Nova igra ↺</button>
             <button id="auth-logout-btn" class="secondary-button auth-logout-btn" type="button">Odjavi se</button>
           </div>
@@ -382,6 +404,6 @@
       </div>
     </div>
 
-    <script type="module" src="js/app.js?v=20260627-11"></script>
+    <script type="module" src="js/app.js?v=20260627-12"></script>
   </body>
 </html>

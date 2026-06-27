@@ -1798,3 +1798,62 @@ main.mp-mode:not(.mp-active) .game-live-stats { display: none; }
 }
 .avatar-opt:hover { background: rgba(255,255,255,0.08); border-color: var(--border); }
 .avatar-opt.selected { border-color: var(--correct, #6aaa64); background: rgba(106,170,100,0.12); }
+
+/* ─── Tile win animation ─────────────────────── */
+@keyframes tile-bounce {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.18); }
+  55%  { transform: scale(0.94); }
+  75%  { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+.tile-win { animation: tile-bounce 0.5s ease forwards; }
+
+/* ─── Board shake on loss ────────────────────── */
+@keyframes board-shake {
+  0%,100% { transform: translateX(0); }
+  15%     { transform: translateX(-6px); }
+  30%     { transform: translateX(6px); }
+  45%     { transform: translateX(-5px); }
+  60%     { transform: translateX(5px); }
+  75%     { transform: translateX(-3px); }
+  90%     { transform: translateX(3px); }
+}
+.board-shake { animation: board-shake 0.55s ease; }
+
+/* ─── End game overlay ───────────────────────── */
+.end-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.55);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+.end-overlay[hidden] { display: none; }
+.end-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 32px 28px;
+  width: min(360px, 90vw);
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+  animation: modal-in 0.25s ease;
+}
+.end-icon { font-size: 3rem; line-height: 1; margin-bottom: 10px; }
+.end-title { font-size: 1.6rem; font-weight: 800; margin-bottom: 8px; }
+.end-details { font-size: 1rem; color: var(--text-muted); margin-bottom: 6px; }
+.end-word {
+  font-size: 1.1rem; font-weight: 700; letter-spacing: 0.06em;
+  color: var(--correct); margin-bottom: 4px;
+}
+.end-mp-wait { color: var(--text-muted); font-size: 0.88rem; margin: 10px 0; }
+.end-mp-results { margin: 12px 0; font-size: 0.9rem; }
+.mp-result-row {
+  display: flex; justify-content: space-between;
+  padding: 6px 10px; border-radius: 8px; margin-bottom: 4px;
+  background: var(--bg-3);
+}
+.mp-result-me { border: 1px solid var(--correct); }
+.end-actions { display: flex; gap: 8px; margin-top: 20px; }
+.end-actions .secondary-button { flex: 1; }

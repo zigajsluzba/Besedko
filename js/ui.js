@@ -1,5 +1,6 @@
 ﻿import { Multiplayer } from "./multiplayer.js?v=20260627-09";
 import { config } from "./config.js?v=20260627-09";
+import { sounds } from "./sounds.js?v=20260627-12";
 
 export class UI {
   constructor(storage) {
@@ -369,6 +370,31 @@ export class UI {
       if (this.mpRematchAcceptBtn) this.mpRematchAcceptBtn.hidden = true;
       if (this.mpRematchNotification) this.mpRematchNotification.hidden = true;
     });
+
+    // End screen buttons
+    document.getElementById("end-stats-btn")?.addEventListener("click", () => {
+      this.hideEndScreen();
+      this.showStats();
+    });
+    document.getElementById("end-new-game-btn")?.addEventListener("click", () => {
+      this.hideEndScreen();
+      this.game?.newGame?.() || location.reload();
+    });
+    document.getElementById("end-overlay")?.addEventListener("click", e => {
+      if (e.target.id === "end-overlay") this.hideEndScreen();
+    });
+
+    // Sounds toggle
+    const soundsToggle = document.getElementById("sounds-toggle");
+    if (soundsToggle) {
+      soundsToggle.setAttribute("aria-checked", String(sounds.enabled));
+      soundsToggle.classList.toggle("active", sounds.enabled);
+      soundsToggle.addEventListener("click", () => {
+        const on = sounds.toggle();
+        soundsToggle.setAttribute("aria-checked", String(on));
+        soundsToggle.classList.toggle("active", on);
+      });
+    }
 
     this._initTileSwap();
 
@@ -1236,7 +1262,7 @@ export class UI {
       this.game?.multiplayer?.sendRiddleProgress(this.riddleGame.revealedCount, this._riddleGuessCount);
       if (this.game?.mode === "multiplayer") {
         this.game?.multiplayer?.sendPlayerFinished(true, this._riddleGuessCount, this.riddleGame.revealedCount);
-        this.showMpRematch();
+        // showMpRematch is now called from _checkBothFinished in multiplayer.js
       }
     } else if (this.riddleGame.failed) {
       this._showRiddleResult(`Odgovor je bil: ${this.riddleGame.current.answer} · ⏱ ${this.game?.getElapsed() || "0:00"}`, false);
@@ -1245,7 +1271,7 @@ export class UI {
       this.game?.multiplayer?.sendRiddleProgress(this.riddleGame.revealedCount, this._riddleGuessCount);
       if (this.game?.mode === "multiplayer") {
         this.game?.multiplayer?.sendPlayerFinished(false, this._riddleGuessCount, 0);
-        this.showMpRematch();
+        // showMpRematch is now called from _checkBothFinished in multiplayer.js
       }
     } else {
       this._riddleReveal();
@@ -1396,6 +1422,93 @@ export class UI {
 
   showHint(text) {
     this.showMessage(text, "info", 4200);
+  }
+
+  // --- Win/lose animations ---
+
+  _launchConfetti() {
+    const canvas = document.createElement("canvas");
+    canvas.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9000";
+    document.body.appendChild(canvas);
+    canvas.width = innerWidth; canvas.height = innerHeight;
+    const c = canvas.getContext("2d");
+    const COLORS = ["#6aaa64","#b59f3b","#4a9eff","#e05c5c","#ff9f43","#a855f7"];
+    const particles = Array.from({length: 90}, () => ({
+      x: Math.random() * canvas.width, y: -12,
+      r: Math.random() * 5 + 2,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      vx: (Math.random() - 0.5) * 5,
+      vy: Math.random() * 3 + 2,
+      rot: Math.random() * Math.PI * 2,
+      rotV: (Math.random() - 0.5) * 0.2,
+      opacity: 1,
+    }));
+    let frame = 0;
+    const draw = () => {
+      c.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        p.x += p.vx; p.y += p.vy; p.rot += p.rotV; p.opacity -= 0.006;
+        if (p.opacity <= 0) return;
+        c.save(); c.translate(p.x, p.y); c.rotate(p.rot);
+        c.globalAlpha = p.opacity; c.fillStyle = p.color;
+        c.fillRect(-p.r, -p.r * 0.5, p.r * 2, p.r);
+        c.restore();
+      });
+      if (++frame < 220) requestAnimationFrame(draw); else canvas.remove();
+    };
+    draw();
+  }
+
+  _animateWinRow(row) {
+    const board = document.getElementById("board");
+    if (!board) return;
+    const rows = board.querySelectorAll(".row");
+    if (!rows[row]) return;
+    rows[row].querySelectorAll(".tile").forEach((tile, i) => {
+      setTimeout(() => tile.classList.add("tile-win"), i * 80);
+    });
+  }
+
+  _animateLoseBoard() {
+    const board = document.getElementById("board");
+    if (board) board.classList.add("board-shake");
+    setTimeout(() => board?.classList.remove("board-shake"), 600);
+  }
+
+  // --- End screen ---
+
+  showEndScreen({ won, word, guessCount, elapsed, mpWaiting = false }) {
+    const overlay = document.getElementById("end-overlay");
+    if (!overlay) return;
+    document.getElementById("end-icon").textContent  = won ? "🎉" : "💔";
+    document.getElementById("end-title").textContent = won ? "Zmaga!" : "Igra končana";
+    const details = [];
+    if (won && guessCount) details.push(`${guessCount} ${guessCount === 1 ? "ugibanje" : "ugibanj"}`);
+    if (elapsed) details.push(`⏱ ${elapsed}`);
+    document.getElementById("end-details").textContent = details.join("  ·  ");
+    document.getElementById("end-word").textContent = won ? "" : `Beseda: ${word || ""}`;
+    const waitEl = document.getElementById("end-mp-wait");
+    if (waitEl) waitEl.hidden = !mpWaiting;
+    const mpResultsEl = document.getElementById("end-mp-results");
+    if (mpResultsEl) mpResultsEl.hidden = true;
+    overlay.hidden = false;
+  }
+
+  hideEndScreen() {
+    const overlay = document.getElementById("end-overlay");
+    if (overlay) overlay.hidden = true;
+  }
+
+  showMpResults(mine, opp) {
+    const el = document.getElementById("end-mp-results");
+    if (!el) return;
+    const fmt = r => r.won
+      ? `✓ ${r.guessCount} ${r.guessCount === 1 ? "ugibanje" : "ugibanj"}`
+      : "✗ izgubil";
+    el.innerHTML = `
+      <div class="mp-result-row mp-result-me"><span>${this.storage?.getAvatar()||"🎮"} Jaz</span><span>${fmt(mine)}</span></div>
+      <div class="mp-result-row"><span>👤 Nasprotnik</span><span>${fmt(opp)}</span></div>`;
+    el.hidden = false;
   }
 
   // --- Stats ---
