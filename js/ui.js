@@ -147,6 +147,9 @@ export class UI {
     // Reveal bar
     this.revealBarEl = document.getElementById("reveal-bar");
     this._revealCountdownInterval = null;
+
+    // Mode ready overlay
+    this.modeReadyOverlay = document.getElementById("mode-ready-overlay");
     this._avatarGridOpen = false;
 
     // Identity card
@@ -391,6 +394,11 @@ export class UI {
     });
     document.getElementById("end-overlay")?.addEventListener("click", e => {
       if (e.target.id === "end-overlay") this.hideEndScreen();
+    });
+
+    document.getElementById("mode-ready-btn")?.addEventListener("click", () => {
+      this._hideReadyOverlay();
+      this.game?.startModeGame();
     });
 
     // Sounds toggles (header + profile)
@@ -899,6 +907,23 @@ export class UI {
     );
   }
 
+  _showReadyOverlay(mode) {
+    const cfg = {
+      timeattack: { icon: "⏱", title: "Časovni napad", desc: "Imaš 3 minute da uganeš čim več besed." },
+      reveal:     { icon: "👁", title: "Razkrivanje",   desc: "Vsake 5 sekund se razkrije ena črka. Ugani preden jih je preveč!" },
+    };
+    const c = cfg[mode] || { icon: "▶", title: mode, desc: "" };
+    const el = id => document.getElementById(id);
+    if (el("mode-ready-icon"))  el("mode-ready-icon").textContent  = c.icon;
+    if (el("mode-ready-title")) el("mode-ready-title").textContent = c.title;
+    if (el("mode-ready-desc"))  el("mode-ready-desc").textContent  = c.desc;
+    if (this.modeReadyOverlay)  this.modeReadyOverlay.hidden = false;
+  }
+
+  _hideReadyOverlay() {
+    if (this.modeReadyOverlay) this.modeReadyOverlay.hidden = true;
+  }
+
   // Called by multiplayer.js when the game actually starts (host + guest).
   onMpGameStart() {
     const mode = this.game?.gameMode || "classic";
@@ -1229,6 +1254,16 @@ export class UI {
 
     if (isRiddle && this.riddleGame) this.startRiddle();
     else if (!isRiddle) this._startLiveStats();
+
+    // In singleplayer, show ready overlay for modes that need explicit start.
+    const inMp = this.game?.mode === "multiplayer";
+    this._hideReadyOverlay();
+    if (!inMp && (isTimeAttack || isReveal)) {
+      this._showReadyOverlay(mode);
+    } else if (!inMp) {
+      // Other modes start immediately.
+      this.game?.startModeGame();
+    }
   }
 
   setRiddleGame(rg) {

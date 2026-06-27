@@ -135,6 +135,16 @@
         <span class="game-timer-score">Besede: <strong id="game-timer-score">0</strong></span>
       </div>
 
+      <!-- Ready overlay (timeattack / reveal in singleplayer) -->
+      <div id="mode-ready-overlay" class="mode-ready-overlay" hidden>
+        <div class="mode-ready-card">
+          <div id="mode-ready-icon" class="mode-ready-icon"></div>
+          <h2 id="mode-ready-title" class="mode-ready-title"></h2>
+          <p id="mode-ready-desc" class="mode-ready-desc"></p>
+          <button id="mode-ready-btn" class="secondary-button mode-ready-btn" type="button">▶ Začni</button>
+        </div>
+      </div>
+
       <!-- Game boards -->
       <div class="boards-container" id="boards-container">
         <div class="board-wrapper" id="my-board-wrapper">
@@ -417,6 +427,6 @@
       </div>
     </div>
 
-    <script type="module" src="js/app.js?v=20260627-17"></script>
+    <script type="module" src="js/app.js?v=20260627-18"></script>
   </body>
 </html>

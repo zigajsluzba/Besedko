@@ -1,10 +1,10 @@
-﻿import { Game } from "./game.js?v=20260627-17";
-import { Dictionary } from "./dictionary.js?v=20260627-17";
-import { Storage } from "./storage.js?v=20260627-17";
-import { UI } from "./ui.js?v=20260627-17";
-import { Multiplayer } from "./multiplayer.js?v=20260627-17";
-import { config } from "./config.js?v=20260627-17";
-import { RiddleGame } from "./riddleGame.js?v=20260627-17";
+﻿import { Game } from "./game.js?v=20260627-18";
+import { Dictionary } from "./dictionary.js?v=20260627-18";
+import { Storage } from "./storage.js?v=20260627-18";
+import { UI } from "./ui.js?v=20260627-18";
+import { Multiplayer } from "./multiplayer.js?v=20260627-18";
+import { config } from "./config.js?v=20260627-18";
+import { RiddleGame } from "./riddleGame.js?v=20260627-18";
 import {
   onAuthChange,
   signInWithGoogle,
@@ -12,7 +12,7 @@ import {
   registerWithEmail,
   logout,
   friendlyAuthError,
-} from "./auth.js?v=20260627-17";
+} from "./auth.js?v=20260627-18";
 
 window.__besedkoInitStatus = "pending";
 window.__besedkoInitError = null;
@@ -67,7 +67,7 @@ async function init() {
 
     // Load riddles and wire riddle game
     try {
-      const riddleResp = await fetch("words/riddles.json?v=20260627-17");
+      const riddleResp = await fetch("words/riddles.json?v=20260627-18");
       if (riddleResp.ok) {
         const riddles = await riddleResp.json();
         const riddleGame = new RiddleGame(riddles);
@@ -99,7 +99,6 @@ async function init() {
     ui.setMode(mode);
     ui.setGameMode(savedGameMode);
     if (savedGameMode !== "classic") setTimeout(() => ui.showModeToast(savedGameMode), 600);
-    if (savedGameMode === "timeattack") game.startTimer();
 
     // ─── Firebase Auth ───────────────────────────────────────────
     const authAvailable = config.firebaseApp?.apiKey &&

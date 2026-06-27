@@ -353,11 +353,15 @@ export class Game {
         ? this._randomLengthAnswer()
         : (this.dictionary?.getDailyAnswer() || this.dictionary?.getRandomAnswer() || this.answer);
       this.restart([answer]);
-      if (mode === "timeattack") this.startTimer();
-      if (mode === "reveal") this._startReveal();
     }
     this.ui?.setGameMode(mode);
     this.ui?.showModeToast(mode);
+  }
+
+  // Called by UI after user clicks "Začni" on the ready overlay (or immediately in MP).
+  startModeGame() {
+    if (this.gameMode === "timeattack") this.startTimer();
+    else if (this.gameMode === "reveal") this._startReveal();
   }
 
   _startReveal() {
