@@ -1614,6 +1614,7 @@ export class UI {
     if (waitEl) waitEl.hidden = !mpWaiting;
     const mpResultsEl = document.getElementById("end-mp-results");
     if (mpResultsEl) mpResultsEl.hidden = true;
+    overlay.classList.toggle("end-overlay--waiting", mpWaiting);
     overlay.hidden = false;
   }
 
@@ -1623,6 +1624,10 @@ export class UI {
   }
 
   showMpResults(mine, opp) {
+    const overlay = document.getElementById("end-overlay");
+    if (overlay) overlay.classList.remove("end-overlay--waiting");
+    const waitEl = document.getElementById("end-mp-wait");
+    if (waitEl) waitEl.hidden = true;
     const el = document.getElementById("end-mp-results");
     if (!el) return;
     const fmt = r => r.won
@@ -1632,6 +1637,7 @@ export class UI {
       <div class="mp-result-row mp-result-me"><span>${this.storage?.getAvatar()||"🎮"} Jaz</span><span>${fmt(mine)}</span></div>
       <div class="mp-result-row"><span>👤 Nasprotnik</span><span>${fmt(opp)}</span></div>`;
     el.hidden = false;
+    if (overlay) overlay.hidden = false;
   }
 
   // --- Stats ---

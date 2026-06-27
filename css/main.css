@@ -1864,6 +1864,23 @@ main.mp-mode:not(.mp-active) .game-live-stats { display: none; }
   backdrop-filter: blur(4px);
 }
 .end-overlay[hidden] { display: none; }
+/* While waiting for MP opponent: compact banner, boards still visible */
+.end-overlay--waiting {
+  position: static; inset: auto; background: none;
+  backdrop-filter: none; padding: 0; z-index: auto;
+  display: block;
+}
+.end-overlay--waiting .end-card {
+  width: 100%; border-radius: 12px; padding: 14px 18px;
+  display: flex; align-items: center; gap: 12px; text-align: left;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+}
+.end-overlay--waiting .end-icon { font-size: 1.6rem; margin: 0; flex-shrink: 0; }
+.end-overlay--waiting .end-title { font-size: 1rem; margin: 0; }
+.end-overlay--waiting .end-details { font-size: 0.85rem; margin: 0; }
+.end-overlay--waiting .end-word { display: none; }
+.end-overlay--waiting .end-actions { display: none; }
+.end-overlay--waiting .end-mp-results { display: none; }
 .end-card {
   background: var(--bg-2);
   border: 1px solid var(--border);
