@@ -1,3 +1,9 @@
+function _fmtElapsed(ms) {
+  const s = Math.round(ms / 1000);
+  if (s < 60) return `${s}s`;
+  return `${Math.floor(s / 60)}m ${s % 60}s`;
+}
+
 export class Multiplayer {
   constructor({ game, ui, firebaseUrl }) {
     this.game = game;
@@ -264,6 +270,7 @@ export class Multiplayer {
     if (!this.isHost && d.status === "playing" && !this.peerConnected && players[this.sessionId]) {
       this.peerConnected = true;
       this.roomCapacity = Object.keys(players).length;
+      this.game.gameStartTime = Date.now();
       this.persistSession();
       try { this.game.receiveGameConfig(d.game_config); } catch (e) {
         console.error("[MP] receiveGameConfig failed:", e);
@@ -303,7 +310,11 @@ export class Multiplayer {
           k.finishedShown = true;
           const verb = p.finished.won ? "zmagal/a" : "izgubil/a";
           const n = p.finished.guessCount;
-          this.ui?.setMultiplayerStatus(`${p.nickname} je ${verb} v ${n} ${n === 1 ? "ugibu" : "ugibih"}.`);
+          const elapsed = p.finished.finishedAt && this.game?.gameStartTime
+            ? _fmtElapsed(p.finished.finishedAt - this.game.gameStartTime)
+            : null;
+          const timePart = elapsed ? ` v ${elapsed}` : "";
+          this.ui?.setMultiplayerStatus(`${p.nickname} je ${verb} v ${n} ${n === 1 ? "ugibu" : "ugibih"}${timePart}.`);
         }
       }
 
