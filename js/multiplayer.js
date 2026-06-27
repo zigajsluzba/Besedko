@@ -389,7 +389,7 @@ export class Multiplayer {
       try { this.game.receiveGameConfig(d.game_config); } catch (e) {}
       this._winnerShown = false;
       this._myResult = null;
-      this._opponentResult = null;
+      this._opponentResults = {};
       for (const k of Object.values(this._knownPlayers)) k.finishedShown = false;
       this.ui?.hideMpRematch();
       this.ui?.hideEndScreen?.();
@@ -453,13 +453,14 @@ export class Multiplayer {
 
   async sendPlayerFinished(won, guessCount, greenCount) {
     if (!this.roomId) return;
+    const finishedAt = Date.now();
     await this._fbPatch(`rooms/${this.roomId}/players/${this.sessionId}`, {
-      finished: { won, guessCount, greenCount: greenCount || 0, finishedAt: Date.now() },
+      finished: { won, guessCount, greenCount: greenCount || 0, finishedAt },
     });
-    this._myResult = { won, guessCount };
+    this._myResult = { won, guessCount, finishedAt };
     // Write result to Firebase so opponents can see it
     await this._fbSet(`rooms/${this.roomId}/results/${this.sessionId}`, {
-      won, guessCount, finishedAt: Date.now(),
+      won, guessCount, finishedAt,
     });
     this._checkAllFinished();
   }

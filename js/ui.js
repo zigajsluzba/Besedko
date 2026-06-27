@@ -2,6 +2,11 @@
 import { config } from "./config.js?v=20260627-09";
 import { sounds } from "./sounds.js?v=20260627-14";
 
+function _fmtMs(ms) {
+  const s = Math.round(ms / 1000);
+  return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60}s`;
+}
+
 export class UI {
   constructor(storage) {
     this.storage = storage;
@@ -1603,6 +1608,7 @@ export class UI {
   showEndScreen({ won, word, guessCount, elapsed, mpWaiting = false }) {
     const overlay = document.getElementById("end-overlay");
     if (!overlay) return;
+    const inMp = this.game?.mode === "multiplayer";
     document.getElementById("end-icon").textContent  = won ? "🎉" : "💔";
     document.getElementById("end-title").textContent = won ? "Zmaga!" : "Igra končana";
     const details = [];
@@ -1614,6 +1620,9 @@ export class UI {
     if (waitEl) waitEl.hidden = !mpWaiting;
     const mpResultsEl = document.getElementById("end-mp-results");
     if (mpResultsEl) mpResultsEl.hidden = true;
+    // In MP: hide "Nova igra" button (use rematch flow instead)
+    const newGameBtn = document.getElementById("end-new-game-btn");
+    if (newGameBtn) newGameBtn.hidden = inMp;
     overlay.classList.toggle("end-overlay--waiting", mpWaiting);
     overlay.hidden = false;
   }
@@ -1623,20 +1632,29 @@ export class UI {
     if (overlay) overlay.hidden = true;
   }
 
-  // opponentResults: map of sid → { won, guessCount, nickname }
+  // opponentResults: map of sid → { won, guessCount, finishedAt, nickname }
   showMpResults(mine, opponentResults) {
     const overlay = document.getElementById("end-overlay");
     if (overlay) overlay.classList.remove("end-overlay--waiting");
     const waitEl = document.getElementById("end-mp-wait");
     if (waitEl) waitEl.hidden = true;
+    const newGameBtn = document.getElementById("end-new-game-btn");
+    if (newGameBtn) newGameBtn.hidden = true;
     const el = document.getElementById("end-mp-results");
     if (!el) return;
-    const fmt = r => r.won
-      ? `✓ ${r.guessCount} ${r.guessCount === 1 ? "ugibanje" : "ugibanj"}`
-      : "✗ izgubil/a";
-    let html = `<div class="mp-result-row mp-result-me"><span>${this.storage?.getAvatar()||"🎮"} Jaz</span><span>${fmt(mine)}</span></div>`;
+    const gameStart = this.game?.gameStartTime;
+    const fmtResult = (r) => {
+      const guesses = r.won
+        ? `✓ ${r.guessCount} ${r.guessCount === 1 ? "ugibanje" : "ugibanj"}`
+        : "✗ izgubil/a";
+      const elapsed = (r.finishedAt && gameStart)
+        ? ` · ⏱ ${_fmtMs(r.finishedAt - gameStart)}`
+        : "";
+      return guesses + elapsed;
+    };
+    let html = `<div class="mp-result-row mp-result-me"><span>${this.storage?.getAvatar()||"🎮"} Jaz</span><span>${fmtResult(mine)}</span></div>`;
     for (const opp of Object.values(opponentResults)) {
-      html += `<div class="mp-result-row"><span>👤 ${opp.nickname || "Nasprotnik"}</span><span>${fmt(opp)}</span></div>`;
+      html += `<div class="mp-result-row"><span>👤 ${opp.nickname || "Nasprotnik"}</span><span>${fmtResult(opp)}</span></div>`;
     }
     el.innerHTML = html;
     el.hidden = false;
