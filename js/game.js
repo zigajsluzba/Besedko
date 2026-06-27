@@ -1,5 +1,5 @@
 ﻿import { Board } from "./board.js?v=20260626-7";
-import { Keyboard } from "./keyboard.js?v=20260626-22";
+import { Keyboard } from "./keyboard.js?v=20260626-23";
 import { WordleEngine } from "./wordleEngine.js?v=20260626-7";
 import { Animations } from "./animations.js?v=20260626-7";
 
@@ -41,6 +41,8 @@ export class Game {
     this.multiplayer = null;
     this.opponentBoard = null;
     this.persistKey = "game-state";
+    this.gameStartTime = Date.now();
+    this.currentRiddle = null;
     window.addEventListener("beforeunload", () => this.persistState());
     window.addEventListener("pagehide", () => this.persistState());
     try { window.game = this; } catch (e) {}
@@ -150,7 +152,8 @@ export class Game {
         this.nextRound();
         return;
       }
-      this.ui && this.ui.showMessage("Čestitke! Zmaga.", "info", 3500);
+      this.ui && this.ui.showMessage(`Čestitke! Zmaga. ⏱ ${this.getElapsed()} · ${row + 1} ugibanj`, "info", 3500);
+      this.ui?._stopLiveStats();
       this.gameOver = true;
       if (this.mode === "multiplayer" && this.multiplayer) {
         this.multiplayer.sendPlayerFinished(true, row + 1);
@@ -185,10 +188,11 @@ export class Game {
       }
       this.updateHeaderStats();
       this.ui && this.ui.showMessage(
-        `Igra končana. Pravilna beseda je ${this.answer}.`,
+        `Igra končana. Beseda: ${this.answer}. ⏱ ${this.getElapsed()}`,
         "error",
         4200
       );
+      this.ui?._stopLiveStats();
       this.gameOver = true;
       if (this.mode === "multiplayer" && this.multiplayer) {
         this.multiplayer.sendPlayerFinished(false, this.rows);
@@ -224,6 +228,11 @@ export class Game {
     this.persistState();
   }
 
+  getElapsed() {
+    const s = Math.floor((Date.now() - (this.gameStartTime || Date.now())) / 1000);
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  }
+
   restart(answers) {
     const normalized = this.normalizeAnswers(answers);
     if (normalized.length === 0) return;
@@ -238,6 +247,7 @@ export class Game {
     this.roundGuesses = [];
     this.hintUsed = false;
     this.boardStates = [];
+    this.gameStartTime = Date.now();
     this.board.rows = this.rows;
     this.board.cols = this.cols;
     this.board.create();

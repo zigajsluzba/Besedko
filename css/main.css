@@ -640,6 +640,28 @@ main.mp-mode:not(.mp-active) .keyboard-actions   { display: none; }
 .mp-gamemode-btn.active[data-mode="timeattack"] { background: #c94040; color: #fff; border-color: #c94040; }
 .mp-gamemode-btn.active[data-mode="zen"]        { background: #4a9e6e; color: #fff; border-color: #4a9e6e; }
 
+/* ─── Live game stats bar ────────────────────── */
+.game-live-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  padding: 4px 0 2px;
+  min-height: 1.6em;
+}
+.live-stat { font-variant-numeric: tabular-nums; }
+.live-stat-sep { opacity: 0.4; }
+.live-stat-started {
+  width: 100%;
+  text-align: center;
+  font-size: 0.71rem;
+  opacity: 0.6;
+}
+main.mp-mode:not(.mp-active) .game-live-stats { display: none; }
+
 /* ─── Game timer ─────────────────────────────── */
 .game-timer {
   display: flex;

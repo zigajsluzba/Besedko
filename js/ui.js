@@ -1,5 +1,5 @@
-﻿import { Multiplayer } from "./multiplayer.js?v=20260626-22";
-import { config } from "./config.js?v=20260626-22";
+﻿import { Multiplayer } from "./multiplayer.js?v=20260626-23";
+import { config } from "./config.js?v=20260626-23";
 
 export class UI {
   constructor(storage) {
@@ -115,6 +115,13 @@ export class UI {
     this.boardsContainer = document.getElementById("boards-container");
     this.riddleGame = null;
 
+    // Live stats bar
+    this.liveStatsEl = document.getElementById("game-live-stats");
+    this.liveTimerEl = document.getElementById("live-timer");
+    this.liveGuessesEl = document.getElementById("live-guesses");
+    this.liveStartedEl = document.getElementById("live-started");
+    this._liveStatsInterval = null;
+
     this.hideTimer = null;
     this._authCallbacks = {};
     this.register();
@@ -127,6 +134,7 @@ export class UI {
     if (game) this.updateRound(game.roundIndex + 1, game.answers.length);
     this.updateHintButton();
     this.updateDailyMode();
+    this._startLiveStats();
     this.populateTopics();
   }
 
@@ -548,8 +556,10 @@ export class UI {
     if (this.keyboardActions) this.keyboardActions.hidden = isRiddle || !this.hintsEnabled();
     if (this.gameTimerEl) this.gameTimerEl.hidden = !isTimeAttack;
     if (this.riddlePanel) this.riddlePanel.hidden = !isRiddle;
+    if (this.liveStatsEl) this.liveStatsEl.hidden = isTimeAttack;
 
     if (isRiddle && this.riddleGame) this.startRiddle();
+    else if (!isRiddle) this._startLiveStats();
   }
 
   setRiddleGame(rg) {
@@ -562,15 +572,17 @@ export class UI {
     this.riddleNextBtn?.addEventListener("click", () => this.startRiddle());
   }
 
-  startRiddle() {
+  startRiddle(riddleData) {
     if (!this.riddleGame) return;
-    this.riddleGame.start();
+    this.riddleGame.start(riddleData || undefined);
+    if (this.game) this.game.gameStartTime = Date.now();
     this._renderRiddleClues();
     if (this.riddleResultEl) { this.riddleResultEl.hidden = true; this.riddleResultEl.className = "riddle-result"; }
     if (this.riddleNextBtn) this.riddleNextBtn.hidden = true;
     if (this.riddleInput) { this.riddleInput.value = ""; this.riddleInput.disabled = false; }
     if (this.riddleSubmitBtn) this.riddleSubmitBtn.disabled = false;
     this._updateRiddleNextBtn();
+    this._startLiveStats();
   }
 
   _renderRiddleClues() {
@@ -589,11 +601,39 @@ export class UI {
     if (this.riddleNextClueBtn) this.riddleNextClueBtn.disabled = !this.riddleGame?.canRevealMore;
   }
 
+  _startLiveStats() {
+    this._stopLiveStats();
+    this._updateLiveStats();
+    this._liveStatsInterval = setInterval(() => this._updateLiveStats(), 1000);
+  }
+
+  _stopLiveStats() {
+    if (this._liveStatsInterval) { clearInterval(this._liveStatsInterval); this._liveStatsInterval = null; }
+  }
+
+  _updateLiveStats() {
+    if (!this.game) return;
+    if (this.liveTimerEl) this.liveTimerEl.textContent = `⏱ ${this.game.getElapsed()}`;
+    if (this.liveGuessesEl) {
+      const isRiddle = this.game.gameMode === "riddle";
+      if (isRiddle && this.riddleGame?.current) {
+        this.liveGuessesEl.textContent = `💡 ${this.riddleGame.revealedCount} / ${this.riddleGame.totalClues}`;
+      } else {
+        this.liveGuessesEl.textContent = `🎯 ${this.game.currentRow} / ${this.game.rows}`;
+      }
+    }
+    if (this.liveStartedEl && this.game.gameStartTime) {
+      const d = new Date(this.game.gameStartTime);
+      this.liveStartedEl.textContent = `začeto ${d.getHours()}:${String(d.getMinutes()).padStart(2,"0")}`;
+    }
+  }
+
   _riddleReveal() {
     if (!this.riddleGame) return;
     this.riddleGame.revealNext();
     this._renderRiddleClues();
     this._updateRiddleNextBtn();
+    this._updateLiveStats();
     if (this.riddleResultEl && !this.riddleGame.solved && !this.riddleGame.failed) {
       this.riddleResultEl.hidden = true;
     }
@@ -607,9 +647,12 @@ export class UI {
     if (!result) return;
     if (result.correct) {
       const stars = "⭐".repeat(Math.max(1, result.score));
-      this._showRiddleResult(`Bravo! ${stars} (${this.riddleGame.revealedCount} namig${this.riddleGame.revealedCount === 1 ? "" : "i"})`, true);
+      const elapsed = this.game?.getElapsed() || "0:00";
+      this._showRiddleResult(`Bravo! ${stars} (${this.riddleGame.revealedCount} namig${this.riddleGame.revealedCount === 1 ? "" : "i"} · ⏱ ${elapsed})`, true);
+      this._stopLiveStats();
     } else if (this.riddleGame.failed) {
-      this._showRiddleResult(`Odgovor je bil: ${this.riddleGame.current.answer}`, false);
+      this._showRiddleResult(`Odgovor je bil: ${this.riddleGame.current.answer} · ⏱ ${this.game?.getElapsed() || "0:00"}`, false);
+      this._stopLiveStats();
     } else {
       this._riddleReveal();
       this._showRiddleResult("❌ Napačno!", false);
