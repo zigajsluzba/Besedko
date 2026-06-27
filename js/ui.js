@@ -1350,18 +1350,19 @@ export class UI {
         .sort((a, b) => b[1].played - a[1].played)
         .map(([key, m]) => {
           const label = modeLabels[key] || key;
-          const wr = m.wins != null && m.played > 0 ? Math.round((m.wins / m.played) * 100) + "%" : "—";
-          const extra = key === "timeattack"
-            ? `<span>Rekord: ${m.bestScore || 0}</span>`
-            : key === "riddle"
-            ? `<span>Pov. namigov: ${m.played > 0 && m.totalClues ? (m.totalClues / (m.wins||1)).toFixed(1) : "—"}</span>`
-            : m.totalGuesses
-            ? `<span>Pov. ugibanj: ${(m.totalGuesses / m.played).toFixed(1)}</span>`
-            : "";
+          const wr = m.wins != null && m.played > 0 ? Math.round((m.wins / m.played) * 100) + "%" : null;
+          const parts = [`${m.played} iger`];
+          if (m.wins != null) parts.push(`${m.wins} zmag`);
+          if (wr) parts.push(wr);
+          const detail = parts.join(" · ");
+          let extra = "";
+          if (key === "timeattack") extra = `Rekord: ${m.bestScore || 0}`;
+          else if (key === "riddle" && m.totalClues) extra = `pov. ${(m.totalClues / (m.wins||1)).toFixed(1)} namig`;
+          else if (m.totalGuesses) extra = `pov. ${(m.totalGuesses / m.played).toFixed(1)} ugibanj`;
           return `<div class="mode-stat-card">
-            <div class="mode-stat-name">${label}</div>
-            <div class="mode-stat-row"><span>${m.played} iger</span>${m.wins != null ? `<span>${m.wins} zmag</span>` : ""}</div>
-            <div class="mode-stat-row"><span>${wr !== "—" ? "Win rate: " + wr : ""}</span>${extra}</div>
+            <span class="mode-stat-name">${label}</span>
+            <span class="mode-stat-detail">${detail}</span>
+            ${extra ? `<span class="mode-stat-extra">${extra}</span>` : ""}
           </div>`;
         }).join("");
     }
@@ -1373,7 +1374,7 @@ export class UI {
         .sort((a, b) => Number(a[0]) - Number(b[0]))
         .map(([len, l]) => {
           const wr = l.played > 0 ? Math.round((l.wins / l.played) * 100) : 0;
-          return `<div class="len-stat-item"><span class="len-label">${len}⬜</span><span>${l.wins}/${l.played}</span><span class="len-wr">${wr}%</span></div>`;
+          return `<div class="len-stat-item"><span class="len-label">${len} črk</span><span class="len-score">${l.wins}/${l.played}</span><span class="len-wr">${wr}%</span></div>`;
         }).join("");
     }
 
