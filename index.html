@@ -20,6 +20,7 @@
         <div id="stats-summary" class="stats-summary" aria-live="polite">0/0</div>
         <div id="round-summary" class="round-summary" aria-live="polite">1/1</div>
         <button class="icon-button" id="stats-button" aria-label="Statistika" title="Statistika">📊</button>
+        <button class="icon-button" id="feedback-btn" aria-label="Povratna informacija" title="Prijavi napako / predlagaj besedo">💬</button>
         <button class="icon-button" id="sounds-toggle-header" aria-label="Zvoki" title="Zvoki vkl/izkl">🔊</button>
         <!-- Auth: shows login button when logged out, user chip when logged in -->
         <button class="icon-button auth-header-btn" id="auth-btn" aria-label="Prijava"><span id="header-avatar">👤</span></button>
@@ -431,6 +432,33 @@
       </div>
     </div>
 
-    <script type="module" src="js/app.js?v=20260627-23"></script>
+    <!-- Feedback modal -->
+    <div id="feedback-modal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="feedback-modal-title">
+      <div class="modal-card feedback-card">
+        <div class="modal-header">
+          <h2 id="feedback-modal-title">Povratna informacija</h2>
+          <button id="feedback-close" class="modal-close" type="button" aria-label="Zapri">✕</button>
+        </div>
+        <div class="feedback-type-row">
+          <button class="feedback-type-btn active" data-type="bug" type="button">🐛 Prijavi napako</button>
+          <button class="feedback-type-btn" data-type="word" type="button">📝 Predlagaj besedo</button>
+        </div>
+        <div id="feedback-bug-form">
+          <label class="feedback-label">Opiši napako:</label>
+          <textarea id="feedback-bug-text" class="feedback-textarea" placeholder="Kaj se je zgodilo? Kako reproducirati?" rows="4"></textarea>
+        </div>
+        <div id="feedback-word-form" hidden>
+          <label class="feedback-label">Predlagana beseda:</label>
+          <input id="feedback-word-input" class="feedback-word-input" type="text" placeholder="npr. KMETIJA" maxlength="10" autocomplete="off" />
+          <label class="feedback-label" style="margin-top:10px">Opomba (neobvezno):</label>
+          <textarea id="feedback-word-note" class="feedback-textarea" placeholder="Zakaj bi ta beseda bila dobra za igro?" rows="2"></textarea>
+        </div>
+        <div id="feedback-success" class="feedback-success" hidden>✓ Hvala! Tvoja povratna informacija je bila poslana.</div>
+        <div id="feedback-error" class="feedback-error" hidden></div>
+        <button id="feedback-submit" class="secondary-button mp-modal-confirm-btn" type="button">Pošlji</button>
+      </div>
+    </div>
+
+    <script type="module" src="js/app.js?v=20260628-24"></script>
   </body>
 </html>

@@ -413,6 +413,28 @@ export class UI {
       this.game?.startModeGame();
     });
 
+    // Feedback modal
+    document.getElementById("feedback-btn")?.addEventListener("click", () => this._openFeedback());
+    document.getElementById("feedback-close")?.addEventListener("click", () => this._closeFeedback());
+    document.getElementById("feedback-modal")?.addEventListener("click", e => {
+      if (e.target.id === "feedback-modal") this._closeFeedback();
+    });
+    document.querySelectorAll(".feedback-type-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".feedback-type-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        const isBug = btn.dataset.type === "bug";
+        document.getElementById("feedback-bug-form").hidden = !isBug;
+        document.getElementById("feedback-word-form").hidden = isBug;
+        document.getElementById("feedback-success").hidden = true;
+        document.getElementById("feedback-error").hidden = true;
+      });
+    });
+    document.getElementById("feedback-word-input")?.addEventListener("input", e => {
+      e.target.value = e.target.value.toUpperCase().replace(/[^A-ZŠĐČĆŽ]/gi, "");
+    });
+    document.getElementById("feedback-submit")?.addEventListener("click", () => this._submitFeedback());
+
     // Sounds toggles (header + profile)
     const updateSoundBtns = (on) => {
       const hdr = document.getElementById("sounds-toggle-header");
@@ -1664,6 +1686,74 @@ export class UI {
   updateMpWaitingProgress(finishedCount, totalCount) {
     const waitEl = document.getElementById("end-mp-wait");
     if (waitEl) waitEl.textContent = `⏳ Čakam… (${finishedCount}/${totalCount} končalo)`;
+  }
+
+  // --- Feedback ---
+
+  _openFeedback() {
+    const modal = document.getElementById("feedback-modal");
+    if (!modal) return;
+    document.getElementById("feedback-bug-text").value = "";
+    document.getElementById("feedback-word-input").value = "";
+    document.getElementById("feedback-word-note").value = "";
+    document.getElementById("feedback-success").hidden = true;
+    document.getElementById("feedback-error").hidden = true;
+    document.getElementById("feedback-submit").hidden = false;
+    // Reset to bug tab
+    document.querySelectorAll(".feedback-type-btn").forEach(b => b.classList.remove("active"));
+    document.querySelector('.feedback-type-btn[data-type="bug"]')?.classList.add("active");
+    document.getElementById("feedback-bug-form").hidden = false;
+    document.getElementById("feedback-word-form").hidden = true;
+    modal.hidden = false;
+  }
+
+  _closeFeedback() {
+    const modal = document.getElementById("feedback-modal");
+    if (modal) modal.hidden = true;
+  }
+
+  async _submitFeedback() {
+    const activeType = document.querySelector(".feedback-type-btn.active")?.dataset?.type || "bug";
+    const successEl = document.getElementById("feedback-success");
+    const errorEl = document.getElementById("feedback-error");
+    const submitBtn = document.getElementById("feedback-submit");
+    successEl.hidden = true;
+    errorEl.hidden = true;
+
+    let payload;
+    if (activeType === "bug") {
+      const text = document.getElementById("feedback-bug-text").value.trim();
+      if (!text) { errorEl.textContent = "Prosim opiši napako."; errorEl.hidden = false; return; }
+      payload = { type: "bug", text, at: Date.now(), ua: navigator.userAgent.slice(0, 120) };
+    } else {
+      const word = document.getElementById("feedback-word-input").value.trim().toUpperCase();
+      if (!word) { errorEl.textContent = "Vnesi besedo."; errorEl.hidden = false; return; }
+      const note = document.getElementById("feedback-word-note").value.trim();
+      payload = { type: "word", word, note: note || null, at: Date.now() };
+    }
+
+    const userId = this._currentUser?.uid || null;
+    if (userId) payload.userId = userId;
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Pošiljam…";
+    try {
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      const res = await fetch(`${config.firebaseUrl}/feedback/${id}.json`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(res.status);
+      successEl.hidden = false;
+      submitBtn.hidden = true;
+    } catch (e) {
+      errorEl.textContent = "Pošiljanje ni uspelo. Poskusi znova.";
+      errorEl.hidden = false;
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Pošlji";
+    }
   }
 
   // --- Stats ---

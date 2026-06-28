@@ -166,6 +166,19 @@
     /* ── Empty state ── */
     .empty { padding: 32px; text-align: center; color: var(--muted); font-size: 0.88rem; }
 
+    /* ── Feedback ── */
+    .badge-new  { background: rgba(224,92,92,0.18); color: var(--red); }
+    .badge-done { background: rgba(106,170,100,0.18); color: var(--green); }
+    .feedback-text { max-width: 340px; white-space: pre-wrap; word-break: break-word; }
+    .btn-action {
+      padding: 3px 10px; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--bg-3); color: var(--text); cursor: pointer;
+      font-size: 0.75rem; white-space: nowrap;
+    }
+    .btn-action:hover { background: rgba(255,255,255,0.1); }
+    .btn-action.accept { border-color: var(--green); color: var(--green); }
+    .btn-action.accept:hover { background: rgba(106,170,100,0.12); }
+
     /* ── Loader ── */
     .loader { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.7s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -235,6 +248,7 @@
       <div class="stat-card blue"><strong id="c-players">—</strong><span>Aktivnih igralcev</span></div>
       <div class="stat-card blue"><strong id="c-users">—</strong><span>Registriranih</span></div>
       <div class="stat-card"><strong id="c-games-played">—</strong><span>Skupaj odigranih iger</span></div>
+      <div class="stat-card yellow"><strong id="c-feedback-new">—</strong><span>Novo povratnih info</span></div>
     </div>
 
     <!-- Rooms section -->
@@ -314,6 +328,34 @@
         </table>
       </div>
     </div>
+
+    <!-- Feedback section -->
+    <div class="section-header" style="margin-top:28px">
+      <h2>💬 Povratne informacije</h2>
+    </div>
+    <div class="filter-bar">
+      <button class="filter-btn active" data-fb-filter="all">Vse</button>
+      <button class="filter-btn" data-fb-filter="bug">🐛 Napake</button>
+      <button class="filter-btn" data-fb-filter="word">📝 Besede</button>
+      <button class="filter-btn" data-fb-filter="new">🔴 Novo</button>
+      <button class="filter-btn" data-fb-filter="done">✓ Obravnavano</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Tip</th>
+            <th>Vsebina</th>
+            <th>Čas</th>
+            <th>Status</th>
+            <th>Akcija</th>
+          </tr>
+        </thead>
+        <tbody id="feedback-tbody"></tbody>
+      </table>
+    </div>
+    <div id="feedback-empty" class="empty" hidden>Ni povratnih informacij</div>
+    <div id="feedback-loader" class="empty"><span class="loader"></span></div>
 
   </main>
 </div>
@@ -449,6 +491,7 @@ async function loadData() {
     renderRooms();
     renderCharts();
     renderUsers();
+    loadFeedback();
   } catch (e) {
     hide($("rooms-loader"));
     $("last-updated").textContent = "Napaka: " + e.message;
@@ -767,6 +810,88 @@ function exportCSV() {
   a.download = "besedko-rooms-" + new Date().toISOString().slice(0,10) + ".csv";
   a.click();
 }
+
+// ── Feedback ──────────────────────────────────────────
+let allFeedback   = {};
+let fbFilter      = "all";
+
+async function loadFeedback() {
+  show($("feedback-loader")); hide($("feedback-empty"));
+  try {
+    const res = await fetch(`${FIREBASE_URL}/feedback.json`);
+    allFeedback = res.ok ? (await res.json() || {}) : {};
+    hide($("feedback-loader"));
+    renderFeedback();
+    // Update new count badge
+    const newCount = Object.values(allFeedback).filter(f => !f.status || f.status === "new").length;
+    $("c-feedback-new").textContent = newCount || "—";
+  } catch (e) {
+    hide($("feedback-loader"));
+  }
+}
+
+function renderFeedback() {
+  const tbody = $("feedback-tbody");
+  let items = Object.entries(allFeedback)
+    .map(([id, f]) => ({ id, ...f }))
+    .sort((a, b) => (b.at || 0) - (a.at || 0));
+
+  if (fbFilter === "bug")  items = items.filter(f => f.type === "bug");
+  if (fbFilter === "word") items = items.filter(f => f.type === "word");
+  if (fbFilter === "new")  items = items.filter(f => !f.status || f.status === "new");
+  if (fbFilter === "done") items = items.filter(f => f.status === "done");
+
+  if (!items.length) { tbody.innerHTML = ""; show($("feedback-empty")); return; }
+  hide($("feedback-empty"));
+
+  tbody.innerHTML = items.map(f => {
+    const isBug  = f.type === "bug";
+    const isDone = f.status === "done";
+    const typeIcon = isBug ? "🐛 Napaka" : "📝 Beseda";
+    const content  = isBug
+      ? `<span class="feedback-text">${escHtml(f.text || "")}</span>`
+      : `<strong>${escHtml(f.word || "")}</strong>${f.note ? `<br><span style="color:var(--muted);font-size:0.78rem">${escHtml(f.note)}</span>` : ""}`;
+    const status   = isDone
+      ? `<span class="badge badge-done">✓ Obravnavano</span>`
+      : `<span class="badge badge-new">Novo</span>`;
+    const actions = isDone
+      ? `<button class="btn-action" onclick="setFbStatus('${f.id}','new')">↩ Ponastavi</button>`
+      : `<button class="btn-action accept" onclick="setFbStatus('${f.id}','done')">✓ Obravnavano</button>`;
+    return `<tr>
+      <td style="white-space:nowrap">${typeIcon}</td>
+      <td>${content}</td>
+      <td style="color:var(--muted);white-space:nowrap;font-size:0.78rem">${absTime(f.at)}</td>
+      <td>${status}</td>
+      <td>${actions}</td>
+    </tr>`;
+  }).join("");
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+async function setFbStatus(id, status) {
+  await fetch(`${FIREBASE_URL}/feedback/${id}/status.json`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(status),
+  });
+  if (allFeedback[id]) allFeedback[id].status = status;
+  renderFeedback();
+  const newCount = Object.values(allFeedback).filter(f => !f.status || f.status === "new").length;
+  $("c-feedback-new").textContent = newCount || "—";
+}
+
+// Wire feedback filters
+document.querySelectorAll("[data-fb-filter]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("[data-fb-filter]").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    fbFilter = btn.dataset.fbFilter;
+    renderFeedback();
+  });
+});
 
 // ── Boot ──────────────────────────────────────────────
 initAuth();

@@ -1,10 +1,10 @@
-﻿import { Game } from "./game.js?v=20260627-23";
-import { Dictionary } from "./dictionary.js?v=20260627-23";
-import { Storage } from "./storage.js?v=20260627-23";
-import { UI } from "./ui.js?v=20260627-23";
-import { Multiplayer } from "./multiplayer.js?v=20260627-23";
-import { config } from "./config.js?v=20260627-23";
-import { RiddleGame } from "./riddleGame.js?v=20260627-23";
+﻿import { Game } from "./game.js?v=20260628-24";
+import { Dictionary } from "./dictionary.js?v=20260628-24";
+import { Storage } from "./storage.js?v=20260628-24";
+import { UI } from "./ui.js?v=20260628-24";
+import { Multiplayer } from "./multiplayer.js?v=20260628-24";
+import { config } from "./config.js?v=20260628-24";
+import { RiddleGame } from "./riddleGame.js?v=20260628-24";
 import {
   onAuthChange,
   signInWithGoogle,
@@ -12,7 +12,7 @@ import {
   registerWithEmail,
   logout,
   friendlyAuthError,
-} from "./auth.js?v=20260627-23";
+} from "./auth.js?v=20260628-24";
 
 window.__besedkoInitStatus = "pending";
 window.__besedkoInitError = null;
@@ -67,7 +67,7 @@ async function init() {
 
     // Load riddles and wire riddle game
     try {
-      const riddleResp = await fetch("words/riddles.json?v=20260627-23");
+      const riddleResp = await fetch("words/riddles.json?v=20260628-24");
       if (riddleResp.ok) {
         const riddles = await riddleResp.json();
         const riddleGame = new RiddleGame(riddles);
