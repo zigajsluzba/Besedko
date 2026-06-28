@@ -1910,7 +1910,7 @@ main.mp-mode:not(.mp-active) .game-live-stats { display: none; }
 .end-actions .secondary-button { flex: 1; }
 
 /* ─── Feedback modal ──────────────────────── */
-.feedback-card { width: min(420px, 92vw); }
+.feedback-panel { width: min(420px, 92vw); }
 .feedback-type-row {
   display: flex; gap: 8px; margin-bottom: 16px;
 }

@@ -417,7 +417,7 @@ export class UI {
     document.getElementById("feedback-btn")?.addEventListener("click", () => this._openFeedback());
     document.getElementById("feedback-close")?.addEventListener("click", () => this._closeFeedback());
     document.getElementById("feedback-modal")?.addEventListener("click", e => {
-      if (e.target.id === "feedback-modal") this._closeFeedback();
+      if (e.target === document.getElementById("feedback-modal")) this._closeFeedback();
     });
     document.querySelectorAll(".feedback-type-btn").forEach(btn => {
       btn.addEventListener("click", () => {
@@ -1704,12 +1704,11 @@ export class UI {
     document.querySelector('.feedback-type-btn[data-type="bug"]')?.classList.add("active");
     document.getElementById("feedback-bug-form").hidden = false;
     document.getElementById("feedback-word-form").hidden = true;
-    modal.hidden = false;
+    modal.classList.add("visible");
   }
 
   _closeFeedback() {
-    const modal = document.getElementById("feedback-modal");
-    if (modal) modal.hidden = true;
+    document.getElementById("feedback-modal")?.classList.remove("visible");
   }
 
   async _submitFeedback() {

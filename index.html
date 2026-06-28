@@ -433,32 +433,34 @@
     </div>
 
     <!-- Feedback modal -->
-    <div id="feedback-modal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="feedback-modal-title">
-      <div class="modal-card feedback-card">
-        <div class="modal-header">
-          <h2 id="feedback-modal-title">Povratna informacija</h2>
-          <button id="feedback-close" class="modal-close" type="button" aria-label="Zapri">✕</button>
+    <div id="feedback-modal" class="stats-modal" role="dialog" aria-modal="true" aria-labelledby="feedback-modal-title">
+      <div class="stats-panel mp-modal-panel feedback-panel">
+        <div class="mp-modal-header">
+          <h2 id="feedback-modal-title" class="mp-modal-title">Povratna informacija</h2>
+          <button id="feedback-close" class="mp-modal-close" type="button" aria-label="Zapri">✕</button>
         </div>
-        <div class="feedback-type-row">
-          <button class="feedback-type-btn active" data-type="bug" type="button">🐛 Prijavi napako</button>
-          <button class="feedback-type-btn" data-type="word" type="button">📝 Predlagaj besedo</button>
+        <div class="mp-modal-body">
+          <div class="feedback-type-row">
+            <button class="feedback-type-btn active" data-type="bug" type="button">🐛 Prijavi napako</button>
+            <button class="feedback-type-btn" data-type="word" type="button">📝 Predlagaj besedo</button>
+          </div>
+          <div id="feedback-bug-form">
+            <label class="feedback-label">Opiši napako:</label>
+            <textarea id="feedback-bug-text" class="feedback-textarea" placeholder="Kaj se je zgodilo? Kako reproducirati?" rows="4"></textarea>
+          </div>
+          <div id="feedback-word-form" hidden>
+            <label class="feedback-label">Predlagana beseda:</label>
+            <input id="feedback-word-input" class="feedback-word-input" type="text" placeholder="npr. KMETIJA" maxlength="10" autocomplete="off" />
+            <label class="feedback-label" style="margin-top:10px">Opomba (neobvezno):</label>
+            <textarea id="feedback-word-note" class="feedback-textarea" placeholder="Zakaj bi ta beseda bila dobra za igro?" rows="2"></textarea>
+          </div>
+          <div id="feedback-success" class="feedback-success" hidden>✓ Hvala! Tvoja povratna informacija je bila poslana.</div>
+          <div id="feedback-error" class="feedback-error" hidden></div>
+          <button id="feedback-submit" class="secondary-button mp-modal-confirm-btn" type="button">Pošlji</button>
         </div>
-        <div id="feedback-bug-form">
-          <label class="feedback-label">Opiši napako:</label>
-          <textarea id="feedback-bug-text" class="feedback-textarea" placeholder="Kaj se je zgodilo? Kako reproducirati?" rows="4"></textarea>
-        </div>
-        <div id="feedback-word-form" hidden>
-          <label class="feedback-label">Predlagana beseda:</label>
-          <input id="feedback-word-input" class="feedback-word-input" type="text" placeholder="npr. KMETIJA" maxlength="10" autocomplete="off" />
-          <label class="feedback-label" style="margin-top:10px">Opomba (neobvezno):</label>
-          <textarea id="feedback-word-note" class="feedback-textarea" placeholder="Zakaj bi ta beseda bila dobra za igro?" rows="2"></textarea>
-        </div>
-        <div id="feedback-success" class="feedback-success" hidden>✓ Hvala! Tvoja povratna informacija je bila poslana.</div>
-        <div id="feedback-error" class="feedback-error" hidden></div>
-        <button id="feedback-submit" class="secondary-button mp-modal-confirm-btn" type="button">Pošlji</button>
       </div>
     </div>
 
-    <script type="module" src="js/app.js?v=20260628-24"></script>
+    <script type="module" src="js/app.js?v=20260628-25"></script>
   </body>
 </html>
