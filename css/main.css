@@ -1981,13 +1981,18 @@ main.mp-mode:not(.mp-active) .game-live-stats { display: none; }
 .premium-gate-overlay {
   position: fixed; inset: 0; z-index: 290;
   display: flex; align-items: center; justify-content: center;
-  background: rgba(var(--bg-rgb, 15,15,15), 0.92);
-  backdrop-filter: blur(6px);
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(2px);
+  padding: 20px;
 }
 .premium-gate-card {
-  text-align: center; padding: 28px 24px; max-width: 320px;
+  text-align: center; padding: 32px 28px; max-width: 340px; width: 100%;
+  background: var(--bg-secondary, #1a1a1a);
+  border: 1px solid var(--border, #333);
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
 }
-.premium-gate-icon { font-size: 2.8rem; margin-bottom: 10px; }
-.premium-gate-card h2 { margin: 0 0 10px; font-size: 1.15rem; }
-.premium-gate-card p { font-size: 0.88rem; color: var(--text-muted); margin: 6px 0; }
-.premium-gate-card .secondary-button { margin-top: 16px; }
+.premium-gate-icon { font-size: 2.4rem; margin-bottom: 12px; }
+.premium-gate-card h2 { margin: 0 0 12px; font-size: 1.2rem; }
+.premium-gate-card p { font-size: 0.88rem; color: var(--text-muted, #999); margin: 6px 0; line-height: 1.5; }
+.premium-gate-card .secondary-button { margin-top: 20px; }
