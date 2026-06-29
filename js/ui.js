@@ -1,4 +1,4 @@
-﻿import { Multiplayer, randomNickname } from "./multiplayer.js?v=20260629-17";
+﻿import { Multiplayer, randomNickname } from "./multiplayer.js?v=20260629-18";
 import { config } from "./config.js?v=20260627-09";
 import { sounds } from "./sounds.js?v=20260627-14";
 
@@ -824,7 +824,7 @@ export class UI {
 
     // Build ordered slot list: me first, then others by joinedAt, then pending, then 1 open slot
     const others = Object.entries(players)
-      .filter(([sid]) => sid !== mySessionId)
+      .filter(([sid, p]) => sid !== mySessionId && p != null)
       .sort((a, b) => (a[1].joinedAt || 0) - (b[1].joinedAt || 0));
     const pending = Object.entries(joinReqs || {})
       .filter(([sid, r]) => r && !players[sid] && sid !== mySessionId);

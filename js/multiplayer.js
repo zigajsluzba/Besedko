@@ -286,7 +286,10 @@ export class Multiplayer {
   _processRoomState() {
     const d = this.roomData;
     if (!d) return;
-    const players = d.players || {};
+    // Filter out null entries — Firebase keeps null tombstones for deleted nodes
+    const players = Object.fromEntries(
+      Object.entries(d.players || {}).filter(([, v]) => v != null)
+    );
     const joinReqs = d.join_requests || {};
 
     // ── Lobby display + topic ──
@@ -296,7 +299,7 @@ export class Multiplayer {
     // ── Guest: track confirmation, detect kick + rejection ──
     if (!this.isHost) {
       if (players[this.sessionId] && !this._inRoom) this._inRoom = true;
-      if (this._inRoom && !players[this.sessionId] && d.status === "waiting") {
+      if (this._inRoom && !players[this.sessionId] && d.status !== "playing") {
         this._handleKicked(); return;
       }
       if (this._joinRequestSent && !joinReqs[this.sessionId] && !players[this.sessionId] && !this._inRoom) {
@@ -463,7 +466,8 @@ export class Multiplayer {
       this.ui?.showDuelWordEntry(w => this._submitDuelWord(w));
     }
     if (this.isHost && isDuelMode && d.status === "duel_words" && d.duelWords) {
-      const sids = Object.keys(d.players || {});
+      // Use the already-filtered players (null tombstones removed)
+      const sids = Object.keys(players);
       if (sids.length >= 2 && sids.every(sid => d.duelWords[sid]) && !this._duelStarting) {
         this._duelStarting = true;
         this._startDuelGame(d.players, d.duelWords);
@@ -787,7 +791,7 @@ export class Multiplayer {
   }
 
   async _startDuelGame(players, duelWords) {
-    const sids = Object.keys(players);
+    const sids = Object.keys(players).filter(sid => players[sid] != null);
     // Each player receives the OTHER player's word as their answer
     const duelAnswers = {};
     for (const sid of sids) {
