@@ -141,7 +141,8 @@
         <span class="game-timer-score">Besede: <strong id="game-timer-score">0</strong></span>
       </div>
 
-      <!-- Ready overlay (timeattack / reveal in singleplayer) -->
+      <!-- Game boards + overlay wrapper (mode-ready only covers this area, not mode strip) -->
+      <div class="game-area" id="game-area">
       <div id="mode-ready-overlay" class="mode-ready-overlay" hidden>
         <div class="mode-ready-card">
           <div id="mode-ready-icon" class="mode-ready-icon"></div>
@@ -159,6 +160,8 @@
         </div>
         <!-- Opponent boards injected dynamically by ui.js -->
       </div>
+
+      </div><!-- /game-area -->
 
       <section id="keyboard" class="keyboard" aria-label="Tipkovnica"></section>
       <div class="keyboard-actions">
@@ -494,6 +497,6 @@
       </div>
     </div>
 
-    <script type="module" src="js/app.js?v=20260629-01"></script>
+    <script type="module" src="js/app.js?v=20260629-08"></script>
   </body>
 </html>

@@ -1833,6 +1833,7 @@ main.mp-mode:not(.mp-active) .game-live-stats { display: none; }
 .board-shake { animation: board-shake 0.55s ease; }
 
 /* ─── Mode ready overlay ─────────────────────── */
+.game-area { position: relative; }
 .mode-ready-overlay {
   position: absolute; inset: 0; z-index: 50;
   display: flex; align-items: center; justify-content: center;
