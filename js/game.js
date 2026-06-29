@@ -278,6 +278,8 @@ export class Game {
     this.currentRow = 0;
     this.currentCol = 0;
     this.gameOver = false;
+    this._persistedWon = null;
+    this._persistedGuessCount = 0;
     this.roundGuesses = [];
     this.hintUsed = false;
     this.boardStates = [];

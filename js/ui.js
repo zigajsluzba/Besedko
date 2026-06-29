@@ -444,13 +444,8 @@ export class UI {
       this.showStats();
     });
     document.getElementById("end-new-game-btn")?.addEventListener("click", () => {
-      if (!this._isPremium && this._hasPlayedToday()) {
-        this.hideEndScreen();
-        this._updateDailyGate();
-        return;
-      }
       this.hideEndScreen();
-      this.game?.newGame?.() || location.reload();
+      startNewGame();
     });
     document.getElementById("end-overlay")?.addEventListener("click", e => {
       if (e.target.id === "end-overlay") this.hideEndScreen();
