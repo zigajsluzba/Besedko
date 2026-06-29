@@ -3,7 +3,7 @@ import { Keyboard } from "./keyboard.js?v=20260627-03";
 import { WordleEngine } from "./wordleEngine.js?v=20260627-03";
 import { Animations } from "./animations.js?v=20260627-03";
 import { sounds } from "./sounds.js?v=20260627-12";
-import { BattleWord } from "./battleword.js?v=20260629-10";
+import { BattleWord } from "./battleword.js?v=20260629-11";
 
 export class Game {
   /**
@@ -363,6 +363,8 @@ export class Game {
   }
 
   restart(answers) {
+    this._stopReveal();
+    this.stopTimer();
     const normalized = this.normalizeAnswers(answers);
     if (normalized.length === 0) return;
     this.answers = normalized;
@@ -451,6 +453,8 @@ export class Game {
   }
 
   setGameMode(mode) {
+    // Duel and relay are MP-only
+    if ((mode === "duel" || mode === "relay") && this.mode !== "multiplayer") return;
     if (this.gameMode === mode && !this.gameOver) return;
     this.stopTimer();
     this._stopReveal();
@@ -462,7 +466,7 @@ export class Game {
     this.battleword = null;
     localStorage.setItem("besedko-gamemode", mode);
     if (mode !== "riddle") {
-      const answer = (mode === "random" || mode === "reveal" || mode === "battleword")
+      const answer = (mode === "random" || mode === "reveal" || mode === "battleword" || mode === "duel" || mode === "relay")
         ? this._randomLengthAnswer()
         : (this.dictionary?.getDailyAnswer() || this.dictionary?.getRandomAnswer() || this.answer);
       this.restart([answer]);
@@ -489,8 +493,9 @@ export class Game {
       if (unrevealed.length === 0) { this._stopReveal(); return; }
       const pos = unrevealed[Math.floor(Math.random() * unrevealed.length)];
       this._revealedPositions.add(pos);
-      this._revealNextAt = Date.now() + 5000;
       this.ui?._updateRevealBar();
+      if (this._revealedPositions.size >= this.cols) { this._stopReveal(); return; }
+      this._revealNextAt = Date.now() + 5000;
     }, 5000);
   }
 

@@ -229,10 +229,13 @@ export class UI {
         this._updateDailyGate();
         return;
       }
-      const nextAnswer = this.game.dictionary
-        ? this.game.dictionary.getDailyAnswer()
-        : this.game.answer;
+      const gm = this.game.gameMode;
+      const isRandom = gm === "random" || gm === "reveal" || gm === "battleword" || gm === "duel" || gm === "relay";
+      const nextAnswer = isRandom
+        ? this.game._randomLengthAnswer()
+        : (this.game.dictionary?.getDailyAnswer() || this.game.answer);
       this.game.restart(nextAnswer ? [nextAnswer] : [this.game.answer]);
+      this.setGameMode(gm);
       this.hideStats();
     };
     this.newGameButton?.addEventListener("click", startNewGame);
@@ -549,6 +552,13 @@ export class UI {
 
     this.modeSingleButton?.classList.toggle("active", normalized === "single");
     this.modeMultiButton?.classList.toggle("active", normalized === "multiplayer");
+
+    // Duel and Relay are MP-only — hide their mode buttons in single player
+    const mpOnlyModes = ["duel", "relay"];
+    mpOnlyModes.forEach(m => {
+      const btn = document.querySelector(`.game-mode-btn[data-mode="${m}"]`);
+      if (btn) btn.hidden = (normalized !== "multiplayer");
+    });
 
     if (this.dailyMode) {
       this.dailyMode.textContent = normalized === "multiplayer" ? "Multi" : "Daily";
@@ -1386,7 +1396,7 @@ export class UI {
     const relayTurnEl = document.getElementById("mp-relay-turn");
     if (relayTurnEl) relayTurnEl.hidden = !(isRelay && this.game?.mode === "multiplayer");
 
-    if (!inMp && (isTimeAttack || isReveal || isBattleword || isRelay)) {
+    if (!inMp && (isTimeAttack || isReveal || isBattleword)) {
       this._showReadyOverlay(mode);
     } else if (!inMp) {
       // Other modes start immediately.
