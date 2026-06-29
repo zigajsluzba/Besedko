@@ -32,6 +32,14 @@ export class Multiplayer {
     this._lastRematchAt = 0;
     this._myResult = null;       // { won, guessCount }
     this._opponentResult = null; // { won, guessCount }
+    // Duel mode
+    this._duelWordEntryShown = false;
+    this._duelStarting = false;
+    // Relay mode
+    this._relayTurnOrder = [];
+    this._relayTurnIndex = 0;
+    this._isMyRelayTurn = false;
+    this._lastRelayRowIndex = -1;
 
     if (!this.available) {
       this.ui?.setMultiplayerStatus("Multiplayer ni konfiguriran. Nastavi Firebase URL v js/config.js");
@@ -170,6 +178,13 @@ export class Multiplayer {
       return;
     }
     this._gameStarting = true;
+    // Duel: go to word-entry phase instead of starting immediately
+    if (this.game.gameMode === "duel") {
+      await this._fbPatch(`rooms/${this.roomId}`, { status: "duel_words" });
+      this._duelWordEntryShown = true;
+      this.ui?.showDuelWordEntry(w => this._submitDuelWord(w));
+      return;
+    }
     await this._startGame(players);
   }
 
@@ -189,6 +204,12 @@ export class Multiplayer {
     this._lastRematchAt = 0;
     this._myResult = null;
     this._opponentResults = {};  // sid → { won, guessCount, finishedAt, nickname }
+    this._duelWordEntryShown = false;
+    this._duelStarting = false;
+    this._relayTurnOrder = [];
+    this._relayTurnIndex = 0;
+    this._isMyRelayTurn = false;
+    this._lastRelayRowIndex = -1;
   }
 
   // ─── SSE / Firebase real-time ─────────────────────────────────────────────
@@ -410,6 +431,41 @@ export class Multiplayer {
         }
       }
     }
+
+    // ── Duel: word entry phase ──
+    if (this.game.gameMode === "duel" && d.status === "duel_words" && !this._duelWordEntryShown) {
+      this._duelWordEntryShown = true;
+      this.ui?.showDuelWordEntry(w => this._submitDuelWord(w));
+    }
+    if (this.isHost && this.game.gameMode === "duel" && d.status === "duel_words" && d.duelWords) {
+      const sids = Object.keys(d.players || {});
+      if (sids.length >= 2 && sids.every(sid => d.duelWords[sid]) && !this._duelStarting) {
+        this._duelStarting = true;
+        this._startDuelGame(d.players, d.duelWords);
+      }
+    }
+
+    // ── Relay: receive row + track turn ──
+    if (this.game.gameMode === "relay" && this.peerConnected) {
+      const relayRow = d.relayRow;
+      if (relayRow?.rowIndex !== undefined && relayRow.rowIndex > this._lastRelayRowIndex && relayRow.sid !== this.sessionId) {
+        this._lastRelayRowIndex = relayRow.rowIndex;
+        this.game.applyRelayRow(relayRow.guessStr, relayRow.states, relayRow.rowIndex);
+      }
+      const rt = d.relayTurn;
+      if (rt?.currentSid) {
+        const wasMyTurn = this._isMyRelayTurn;
+        this._isMyRelayTurn = (rt.currentSid === this.sessionId);
+        this._relayTurnIndex = rt.turnIndex || 0;
+        const turnName = rt.currentSid === this.sessionId ? "Jaz" : (players[rt.currentSid]?.nickname || "Nasprotnik");
+        this.ui?.updateRelayTurn(turnName, this._isMyRelayTurn);
+        if (!wasMyTurn && this._isMyRelayTurn) {
+          this.ui?.setMultiplayerStatus("Na vrsti si — vnesi svojo vrstico! 🎯");
+        } else if (!this._isMyRelayTurn) {
+          this.ui?.setMultiplayerStatus("Na vrsti: " + turnName);
+        }
+      }
+    }
   }
 
   _ensureOpponentBoard(sid, player, gameMode) {
@@ -424,9 +480,22 @@ export class Multiplayer {
 
   async _startGame(players) {
     const config = this.game.getGameConfig();
+
+    // Relay: init turn order + first player gets to go
+    if (config.gameMode === "relay") {
+      const sids = Object.keys(players);
+      this._relayTurnOrder = sids;
+      this._relayTurnIndex = 0;
+      const firstSid = sids[0];
+      this._isMyRelayTurn = (firstSid === this.sessionId);
+      config.relayTurnOrder = sids;
+      config.relayFirstSid = firstSid;
+    }
+
     await this._fbPatch(`rooms/${this.roomId}`, {
       status: "playing",
       game_config: config,
+      ...(config.gameMode === "relay" ? { relayTurn: { currentSid: config.relayFirstSid, turnIndex: 0 } } : {}),
     });
 
     this.game.gameStartTime = Date.now();
@@ -434,14 +503,24 @@ export class Multiplayer {
     this.roomCapacity = Object.keys(players).length;
 
     for (const [sid, p] of Object.entries(players)) {
-      if (sid !== this.sessionId) this._ensureOpponentBoard(sid, p, config.gameMode);
+      if (sid !== this.sessionId) {
+        // Relay: no opponent boards (shared board concept)
+        if (config.gameMode !== "relay") this._ensureOpponentBoard(sid, p, config.gameMode);
+        else this._knownPlayers[sid] = { nickname: p.nickname, finishedShown: false };
+      }
     }
 
     this.ui?.setRoomTopic(this.game.topic);
     this.ui?.onMpGameStart();
     this.ui?.showMpEmojiPanel();
     this.ui?.showMpHintBtn();
-    this.ui?.setMultiplayerStatus("Igra se je začela. Srečno!");
+    if (config.gameMode === "relay") {
+      const firstName = this._isMyRelayTurn ? "Jaz" : (players[config.relayFirstSid]?.nickname || "Nasprotnik");
+      this.ui?.updateRelayTurn(firstName, this._isMyRelayTurn);
+      this.ui?.setMultiplayerStatus("Štafeta — igrate skupaj! Na vrsti: " + firstName);
+    } else {
+      this.ui?.setMultiplayerStatus("Igra se je začela. Srečno!");
+    }
   }
 
   // ─── Outgoing messages ─────────────────────────────────────────────────────
@@ -663,5 +742,77 @@ export class Multiplayer {
     return Array.from({ length: 5 }, () =>
       chars[Math.floor(Math.random() * chars.length)]
     ).join("");
+  }
+
+  // ─── Duel mode ──────────────────────────────────────────────────────────────
+
+  async _submitDuelWord(word) {
+    word = (word || "").toUpperCase().trim();
+    if (word.length < 3) {
+      this.ui?.showMessage("Beseda mora imeti vsaj 3 črke!", "error", 2000);
+      return false;
+    }
+    if (this.game.dictionary && !this.game.dictionary.isValid(word)) {
+      this.ui?.showMessage("Beseda ni v slovarju!", "error", 2000);
+      return false;
+    }
+    await this._fbSet(`rooms/${this.roomId}/duelWords/${this.sessionId}`, word);
+    this.ui?.setDuelWordSubmitted(word);
+    return true;
+  }
+
+  async _startDuelGame(players, duelWords) {
+    const sids = Object.keys(players);
+    // Each player receives the OTHER player's word as their answer
+    const duelAnswers = {};
+    for (const sid of sids) {
+      const otherSid = sids.find(s => s !== sid);
+      duelAnswers[sid] = otherSid ? duelWords[otherSid] : duelWords[sids[0]];
+    }
+    const config = this.game.getGameConfig();
+    config.duelAnswers = duelAnswers;
+    // Restart host's own game with the opponent's word
+    const myAnswer = duelAnswers[this.sessionId];
+    if (myAnswer) this.game.restart([myAnswer]);
+    await this._fbPatch(`rooms/${this.roomId}`, { status: "playing", game_config: config });
+    this.game.gameStartTime = Date.now();
+    this.peerConnected = true;
+    this.roomCapacity = sids.length;
+    for (const [sid, p] of Object.entries(players)) {
+      if (sid !== this.sessionId) this._ensureOpponentBoard(sid, p, config.gameMode);
+    }
+    this.ui?.hideDuelWordEntry();
+    this.ui?.onMpGameStart();
+    this.ui?.showMpEmojiPanel();
+    this.ui?.showMpHintBtn();
+    this.ui?.setMultiplayerStatus("Besedni dvoboj! Ugani nasprotnikovo besedo ⚔️");
+  }
+
+  // ─── Relay mode ─────────────────────────────────────────────────────────────
+
+  isMyRelayTurn() {
+    return this._isMyRelayTurn;
+  }
+
+  async onRelayGuessSubmitted(guessStr, states, rowIndex, isWin) {
+    if (!this.peerConnected || !this.roomId) return;
+    await this._fbPatch(`rooms/${this.roomId}`, {
+      relayRow: { sid: this.sessionId, guessStr, states, rowIndex, submittedAt: Date.now() },
+    });
+    this._lastRelayRowIndex = rowIndex;
+    if (!isWin && rowIndex + 1 < this.game.rows) {
+      await this._advanceRelayTurn(rowIndex + 1);
+    }
+  }
+
+  async _advanceRelayTurn(nextRowIndex) {
+    if (!this._relayTurnOrder.length) return;
+    const nextIndex = nextRowIndex % this._relayTurnOrder.length;
+    const nextSid = this._relayTurnOrder[nextIndex];
+    this._relayTurnIndex = nextIndex;
+    this._isMyRelayTurn = (nextSid === this.sessionId);
+    await this._fbPatch(`rooms/${this.roomId}`, {
+      relayTurn: { currentSid: nextSid, turnIndex: nextIndex },
+    });
   }
 }

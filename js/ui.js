@@ -1020,6 +1020,7 @@ export class UI {
       timeattack: { icon: "⏱", title: "Časovni napad", desc: "Imaš 3 minute da uganeš čim več besed." },
       reveal:     { icon: "👁", title: "Razkrivanje",   desc: "Vsake 5 sekund se razkrije ena črka. Ugani preden jih je preveč!" },
       battleword: { icon: "⚓", title: "Ladjice + Besede", desc: "Ugani besedo IN potopi ladjo na radarju — oba cilja v 6 potezah!" },
+      relay:      { icon: "🏃", title: "Štafeta",          desc: "Vsak prispeva eno vrstico. Skupaj uganeš besedo v 6 potezah." },
     };
     const c = cfg[mode] || { icon: "▶", title: mode, desc: "" };
     const el = id => document.getElementById(id);
@@ -1319,6 +1320,8 @@ export class UI {
     random:     { desc: "Naključna beseda — 4, 5 ali 6 črk. Tabela se prilagodi dolžini.", toast: "Naključni način 🎲 — nova dolžina vsako igro!" },
     reveal:     { desc: "Vsakih 5 sekund se razkrije ena črka. Ugani čim prej!", toast: "Razkrivanje 👁 — beseda se počasi razkriva!" },
     battleword: { desc: "Ugani besedo IN potopi 3-celično ladjo na 6×6 radarju — v 6 potezah!", toast: "Ladjice ⚓ — ugani besedo + potopi ladjo!" },
+    duel:       { desc: "Vsak izbere besedo za nasprotnika. Zmaga tisti z manj ugibanji.", toast: "Besedni dvoboj ⚔️ — ugani nasprotnikovo besedo!" },
+    relay:      { desc: "Ekipa skupaj ugane besedo — vsak prispeva eno vrstico po vrsti.", toast: "Štafeta 🏃 — na vrsti vsak enkrat!" },
   };
 
   static _modeLabels = {
@@ -1330,6 +1333,8 @@ export class UI {
     random:     "🎲 Naključno",
     reveal:     "👁 Razkrivanje",
     battleword: "⚓ Ladjice",
+    duel:       "⚔️ Dvoboj",
+    relay:      "🏃 Štafeta",
   };
 
   setGameMode(mode) {
@@ -1346,6 +1351,7 @@ export class UI {
     const isTimeAttack = mode === "timeattack";
     const isReveal = mode === "reveal";
     const isBattleword = mode === "battleword";
+    const isRelay = mode === "relay";
 
     // In MP lobby (game not yet started) only update labels — don't show game UI.
     const inMpLobby = this.game?.mode === "multiplayer" && !this.game?.multiplayer?.peerConnected;
@@ -1376,7 +1382,11 @@ export class UI {
     // In singleplayer, show ready overlay for modes that need explicit start.
     const inMp = this.game?.mode === "multiplayer";
     this._hideReadyOverlay();
-    if (!inMp && (isTimeAttack || isReveal || isBattleword)) {
+    // Relay turn indicator (shown in MP relay, hidden otherwise)
+    const relayTurnEl = document.getElementById("mp-relay-turn");
+    if (relayTurnEl) relayTurnEl.hidden = !(isRelay && this.game?.mode === "multiplayer");
+
+    if (!inMp && (isTimeAttack || isReveal || isBattleword || isRelay)) {
       this._showReadyOverlay(mode);
     } else if (!inMp) {
       // Other modes start immediately.
@@ -1616,6 +1626,64 @@ export class UI {
       email: (this.authEmailInput?.value || "").trim(),
       password: this.authPasswordInput?.value || "",
     };
+  }
+
+  // ─── Duel mode ─────────────────────────────────────────────────────────────
+
+  showDuelWordEntry(onSubmit) {
+    const panel = document.getElementById("mp-duel-word-entry");
+    if (!panel) return;
+    panel.hidden = false;
+    const status = document.getElementById("mp-duel-status");
+    if (status) status.textContent = "Vnesi besedo, ki jo bo moral ugibati nasprotnik.";
+    const btn = document.getElementById("mp-duel-confirm-btn");
+    const input = document.getElementById("mp-duel-word-input");
+    if (input) { input.value = ""; input.disabled = false; input.focus(); }
+    if (btn) {
+      const newBtn = btn.cloneNode(true);
+      btn.parentNode.replaceChild(newBtn, btn);
+      newBtn.addEventListener("click", async () => {
+        const word = (input?.value || "").toUpperCase().trim();
+        const ok = await onSubmit(word);
+        // setDuelWordSubmitted handles visual feedback
+      });
+    }
+    if (input) {
+      input.addEventListener("keydown", async (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          const word = input.value.toUpperCase().trim();
+          await onSubmit(word);
+        }
+      }, { once: true });
+    }
+  }
+
+  hideDuelWordEntry() {
+    const panel = document.getElementById("mp-duel-word-entry");
+    if (panel) panel.hidden = true;
+  }
+
+  setDuelWordSubmitted(word) {
+    const input = document.getElementById("mp-duel-word-input");
+    const btn = document.getElementById("mp-duel-confirm-btn");
+    const status = document.getElementById("mp-duel-status");
+    if (input) { input.value = word; input.disabled = true; }
+    if (btn) btn.disabled = true;
+    if (status) status.textContent = "✅ Beseda potrjena! Čakam na nasprotnika...";
+  }
+
+  // ─── Relay turn indicator ───────────────────────────────────────────────────
+
+  updateRelayTurn(playerName, isMyTurn) {
+    const el = document.getElementById("mp-relay-turn");
+    const txt = document.getElementById("mp-relay-turn-text");
+    if (!el) return;
+    el.hidden = false;
+    if (txt) {
+      txt.textContent = isMyTurn ? "🎯 Na vrsti: Jaz" : `⏳ Na vrsti: ${playerName}`;
+      txt.className = "mp-relay-turn-text" + (isMyTurn ? " my-turn" : "");
+    }
   }
 
   // ─── Battleword ────────────────────────────────────────────────────────────

@@ -3,7 +3,7 @@ import { Keyboard } from "./keyboard.js?v=20260627-03";
 import { WordleEngine } from "./wordleEngine.js?v=20260627-03";
 import { Animations } from "./animations.js?v=20260627-03";
 import { sounds } from "./sounds.js?v=20260627-12";
-import { BattleWord } from "./battleword.js?v=20260629-09";
+import { BattleWord } from "./battleword.js?v=20260629-10";
 
 export class Game {
   /**
@@ -153,6 +153,12 @@ export class Game {
         return;
       }
     }
+    // RELAY: block if it's not this player's turn
+    if (this.gameMode === "relay" && this.mode === "multiplayer" && this.multiplayer?.isMyRelayTurn() === false) {
+      this.ui?.showMessage("⏳ Čakaj na svojo vrsto!", "error", 2000);
+      return;
+    }
+
     // BATTLEWORD: require a radar cell to be selected before submitting
     if (this.gameMode === "battleword" && this.battleword && !this.battleword.isSunk()) {
       if (!this.battleword.hasPending()) {
@@ -200,6 +206,12 @@ export class Game {
     if (this.gameMode === "battleword" && this.battleword && !this.battleword.isSunk()) {
       const bwShot = this.battleword.fire();
       if (bwShot) this.ui?.onBattlewordShot(bwShot, this.battleword);
+    }
+
+    // RELAY: broadcast this row to all other players
+    if (this.gameMode === "relay" && this.mode === "multiplayer" && this.multiplayer) {
+      const guessStr = guess.join("").toUpperCase();
+      this.multiplayer.onRelayGuessSubmitted(guessStr, states, row, isWin);
     }
 
     // Time attack: auto-next word on win, don't end game
@@ -563,6 +575,36 @@ export class Game {
   }
 
   /** Config sent by host to guest when guest joins. */
+  /** Relay mode: apply a row submitted by another player to this player's board. */
+  applyRelayRow(guessStr, states, rowIndex) {
+    if (rowIndex === undefined || rowIndex < 0 || rowIndex >= this.rows || this.gameOver) return;
+    const letters = (guessStr || "").split("");
+    letters.forEach((l, i) => this.board.setTile(rowIndex, i, l));
+    states.forEach((state, i) => {
+      this.board.setTileState(rowIndex, i, state);
+      if (letters[i]) this.keyboard.setKeyState(letters[i].toUpperCase(), state);
+    });
+    this.currentRow = rowIndex + 1;
+    this.currentCol = 0;
+    this.persistState();
+    if (states.every(s => s === "correct")) {
+      this.gameOver = true;
+      this._persistedWon = true;
+      sounds.win();
+      this.ui?.showMessage("🏅 Ekipa je zmagala! Čestitke vsem!", "info", 3500);
+      this.ui?._stopLiveStats();
+      this.ui?._launchConfetti();
+      setTimeout(() => this.ui?.showEndScreen({ won: true, guessCount: rowIndex + 1, elapsed: this.getElapsed() }), 1800);
+    } else if (this.currentRow >= this.rows) {
+      this.gameOver = true;
+      this._persistedWon = false;
+      sounds.lose();
+      this.ui?.showMessage(`Igra končana. Beseda: ${this.answer}`, "error", 3500);
+      this.ui?._stopLiveStats();
+      setTimeout(() => this.ui?.showEndScreen({ won: false, word: this.answer, elapsed: this.getElapsed() }), 1200);
+    }
+  }
+
   getGameConfig() {
     return {
       answers: this.answers,
@@ -587,10 +629,23 @@ export class Game {
     if (Number.isInteger(config.rows) && config.rows >= 1) {
       this.rows = config.rows;
     }
-    const answers = this.normalizeAnswers(
-      config.answers || (config.answer ? [config.answer] : [])
-    );
+    // Duel: guest uses the answer assigned to them
+    let answers;
+    if (config.duelAnswers && this.multiplayer?.sessionId) {
+      const myAnswer = config.duelAnswers[this.multiplayer.sessionId];
+      answers = this.normalizeAnswers(myAnswer ? [myAnswer] : []);
+    }
+    if (!answers || answers.length === 0) {
+      answers = this.normalizeAnswers(
+        config.answers || (config.answer ? [config.answer] : [])
+      );
+    }
     if (answers.length > 0) this.restart(answers);
+    // Relay: init turn order for guest
+    if (config.gameMode === "relay" && config.relayTurnOrder && this.multiplayer) {
+      this.multiplayer._relayTurnOrder = config.relayTurnOrder;
+      this.multiplayer._isMyRelayTurn = (config.relayFirstSid === this.multiplayer.sessionId);
+    }
     if (this.gameMode === "timeattack") this.startTimer();
     if (this.gameMode === "reveal") this._startReveal();
     this.ui?.setGameMode(this.gameMode);

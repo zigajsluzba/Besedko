@@ -110,6 +110,22 @@
           </div>
         </div>
 
+        <!-- Duel mode: word entry before game starts -->
+        <div id="mp-duel-word-entry" class="mp-duel-word-entry" hidden>
+          <p class="mp-duel-prompt">⚔️ Vnesi besedo za nasprotnika:</p>
+          <div class="mp-duel-input-row">
+            <input type="text" id="mp-duel-word-input" class="mp-text-input mp-duel-word-input"
+                   placeholder="npr. KMETIJA" maxlength="10" autocomplete="off" />
+            <button id="mp-duel-confirm-btn" class="secondary-button" type="button">✓ Potrdi</button>
+          </div>
+          <p id="mp-duel-status" class="mp-duel-status"></p>
+        </div>
+
+        <!-- Relay mode: whose turn indicator -->
+        <div id="mp-relay-turn" class="mp-relay-turn" hidden>
+          <span id="mp-relay-turn-text" class="mp-relay-turn-text">⏳ Na vrsti: —</span>
+        </div>
+
         <div id="multiplayer-status" class="multiplayer-status" aria-live="polite"></div>
       </div>
 
@@ -129,6 +145,8 @@
         <button class="game-mode-btn" data-mode="random" type="button">🎲 Naključno</button>
         <button class="game-mode-btn" data-mode="reveal" type="button">👁 Razkrivanje</button>
         <button class="game-mode-btn" data-mode="battleword" type="button">⚓ Ladjice</button>
+        <button class="game-mode-btn" data-mode="duel" type="button">⚔️ Dvoboj</button>
+        <button class="game-mode-btn" data-mode="relay" type="button">🏃 Štafeta</button>
       </div>
       <p class="game-mode-desc" id="game-mode-desc"></p>
       <div id="reveal-bar" class="reveal-bar" hidden>
@@ -508,6 +526,6 @@
       </div>
     </div>
 
-    <script type="module" src="js/app.js?v=20260629-09"></script>
+    <script type="module" src="js/app.js?v=20260629-10"></script>
   </body>
 </html>

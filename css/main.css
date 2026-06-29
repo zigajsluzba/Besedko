@@ -1998,6 +1998,32 @@ main.mp-mode:not(.mp-active) .game-live-stats { display: none; }
 .premium-gate-card p { font-size: 0.88rem; color: var(--text-muted, #999); margin: 6px 0; line-height: 1.5; }
 .premium-gate-card .secondary-button { margin-top: 20px; }
 
+/* ── Duel mode – word entry ───────────────────────────────── */
+.mp-duel-word-entry {
+  background: var(--bg-secondary, #1a1a1a);
+  border: 1px solid var(--border, #333);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 8px 0;
+  text-align: center;
+}
+.mp-duel-prompt { font-size: 0.88rem; font-weight: 600; margin: 0 0 10px; }
+.mp-duel-input-row { display: flex; gap: 8px; align-items: center; justify-content: center; }
+.mp-duel-word-input { width: 160px; text-transform: uppercase; letter-spacing: 0.12em; }
+.mp-duel-status { font-size: 0.8rem; color: var(--text-muted); margin: 8px 0 0; min-height: 1em; }
+
+/* ── Relay mode – turn indicator ─────────────────────────── */
+.mp-relay-turn {
+  text-align: center;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: var(--bg-secondary, #1a1a1a);
+  border: 1px solid var(--border, #333);
+  margin: 4px 0;
+}
+.mp-relay-turn-text { font-size: 0.88rem; font-weight: 600; }
+.mp-relay-turn-text.my-turn { color: #4caf50; }
+
 /* ── Battleword (Ladjice + Besede) ────────────────────────── */
 .game-area.battleword-mode {
   display: flex;
