@@ -1440,7 +1440,7 @@ main.mp-mode:not(.mp-active) .game-live-stats { display: none; }
   align-items: center;
   justify-content: center;
   background: rgba(0,0,0,0.6);
-  z-index: 20;
+  z-index: 400;
   padding: 20px;
 }
 
@@ -1979,7 +1979,7 @@ main.mp-mode:not(.mp-active) .game-live-stats { display: none; }
 .mode-lock-icon { pointer-events: none; font-size: 0.75em; }
 
 .premium-gate-overlay {
-  position: fixed; inset: 0; z-index: 300;
+  position: fixed; inset: 0; z-index: 290;
   display: flex; align-items: center; justify-content: center;
   background: rgba(var(--bg-rgb, 15,15,15), 0.92);
   backdrop-filter: blur(6px);
