@@ -14,7 +14,7 @@ export class UI {
     this.selectedWordLength = 5;
     this.selectedRows = 6;
     this.selectedTopic = "mešano";
-    this._isPremium = false;
+    this._isPremium = null; // null = auth still loading, false = confirmed non-premium
 
     // Core UI elements
     this.messageElement = document.getElementById("message");
@@ -225,7 +225,7 @@ export class UI {
     });
     const startNewGame = () => {
       if (!this.game) return;
-      if (!this._isPremium && this._hasPlayedToday()) {
+      if (this._isPremium === false && this._hasPlayedToday()) {
         this._updateDailyGate();
         return;
       }
@@ -240,7 +240,7 @@ export class UI {
     this.hintButton?.addEventListener("click", () => this.game && this.game.requestHint());
     this.modeSingleButton?.addEventListener("click", () => this.setMode("single"));
     this.modeMultiButton?.addEventListener("click", () => {
-      if (!this._isPremium) {
+      if (this._isPremium === false) {
         this._showPremiumUpsell("Večigralski način je na voljo samo za Premium uporabnike.");
         return;
       }
@@ -345,7 +345,7 @@ export class UI {
     this.gameModeButtons?.forEach((btn) => {
       btn.addEventListener("click", () => {
         const m = btn.dataset.mode;
-        if (!this._isPremium && m !== "classic") {
+        if (this._isPremium === false && m !== "classic") {
           this._showPremiumUpsell("Izbira načina igre je na voljo samo za Premium uporabnike.");
           return;
         }
@@ -1616,33 +1616,33 @@ export class UI {
   }
 
   _applyPremiumGating() {
-    const premium = this._isPremium;
+    const locked = this._isPremium === false; // null (loading) or true = don't lock
 
     // Game mode buttons: lock all non-classic
     this.gameModeButtons?.forEach(btn => {
-      const locked = !premium && btn.dataset.mode !== "classic";
-      btn.classList.toggle("mode-locked", locked);
-      if (locked && !btn.querySelector(".mode-lock-icon")) {
+      const btnLocked = locked && btn.dataset.mode !== "classic";
+      btn.classList.toggle("mode-locked", btnLocked);
+      if (btnLocked && !btn.querySelector(".mode-lock-icon")) {
         const icon = document.createElement("span");
         icon.className = "mode-lock-icon";
         icon.textContent = " 🔒";
         btn.appendChild(icon);
       }
-      if (!locked) btn.querySelector(".mode-lock-icon")?.remove();
+      if (!btnLocked) btn.querySelector(".mode-lock-icon")?.remove();
     });
 
     // Multiplayer mode button
     const mpBtn = this.modeMultiButton;
     if (mpBtn) {
-      mpBtn.classList.toggle("mode-locked", !premium);
+      mpBtn.classList.toggle("mode-locked", locked);
       const existing = mpBtn.querySelector(".mode-lock-icon");
-      if (!premium && !existing) {
+      if (locked && !existing) {
         const icon = document.createElement("span");
         icon.className = "mode-lock-icon";
         icon.textContent = " 🔒";
         mpBtn.appendChild(icon);
       }
-      if (premium) existing?.remove();
+      if (!locked) existing?.remove();
     }
 
     // Daily limit gate overlay
@@ -1658,7 +1658,7 @@ export class UI {
   }
 
   _recordDailyPlay() {
-    if (!this._isPremium) {
+    if (this._isPremium === false) {
       window.localStorage.setItem(this._dailyLimitKey(), this._dailyDateKey());
       this._updateDailyGate();
     }
@@ -1667,8 +1667,8 @@ export class UI {
   _updateDailyGate() {
     const gate = document.getElementById("premium-gate-overlay");
     if (!gate) return;
-    // Show whenever user has played today and is not premium — regardless of current gameOver state
-    const show = !this._isPremium && this._hasPlayedToday();
+    // Only show when premium status is confirmed false (null = still loading → don't show)
+    const show = this._isPremium === false && this._hasPlayedToday();
     gate.hidden = !show;
   }
 
