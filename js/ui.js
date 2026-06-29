@@ -1,4 +1,4 @@
-﻿import { Multiplayer, randomNickname } from "./multiplayer.js?v=20260629-16";
+﻿import { Multiplayer, randomNickname } from "./multiplayer.js?v=20260629-17";
 import { config } from "./config.js?v=20260627-09";
 import { sounds } from "./sounds.js?v=20260627-14";
 
@@ -875,7 +875,7 @@ export class UI {
   openLobbyBrowser() {
     this.mpLobbyBrowser?.classList.add("visible");
     this._loadBrowserRooms();
-    this._browserInterval = setInterval(() => this._loadBrowserRooms(), 6000);
+    this._browserInterval = setInterval(() => this._loadBrowserRooms(), 2000);
   }
 
   closeLobbyBrowser() {
