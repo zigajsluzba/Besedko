@@ -66,6 +66,7 @@ export class UI {
     this.mpCreateClose = document.getElementById("mp-create-close");
     this.mpModalNickname = document.getElementById("mp-modal-nickname");
     this.mpModalPassword = document.getElementById("mp-modal-password");
+    this.mpModalCustomWord = document.getElementById("mp-modal-custom-word");
     this.mpModalCreateBtn = document.getElementById("mp-modal-create-btn");
     this.mpTopicContainer = document.getElementById("mp-topic-buttons");
     this.mpLengthButtons = document.querySelectorAll(".mp-length-btn");
@@ -341,6 +342,9 @@ export class UI {
     document.getElementById("mp-modal-clear-password")?.addEventListener("click", () => {
       if (this.mpModalPassword) this.mpModalPassword.value = "";
     });
+    document.getElementById("mp-modal-custom-word")?.addEventListener("input", e => {
+      e.target.value = e.target.value.toUpperCase().replace(/[^A-ZŠĐČĆŽ]/gi, "");
+    });
 
     // Join modal
     this.mpJoinClose?.addEventListener("click", () => this.closeJoinModal());
@@ -411,6 +415,19 @@ export class UI {
     document.getElementById("mode-ready-btn")?.addEventListener("click", () => {
       this._hideReadyOverlay();
       this.game?.startModeGame();
+    });
+
+    // Daily leaderboard
+    document.getElementById("daily-lb-btn")?.addEventListener("click", () => {
+      const dateEl = document.getElementById("daily-lb-date");
+      if (dateEl) dateEl.textContent = new Date().toLocaleDateString("sl-SI", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
+      this.showDailyLeaderboard();
+    });
+    document.getElementById("daily-lb-close")?.addEventListener("click", () => {
+      document.getElementById("daily-lb-modal")?.classList.remove("visible");
+    });
+    document.getElementById("daily-lb-modal")?.addEventListener("click", e => {
+      if (e.target === document.getElementById("daily-lb-modal")) document.getElementById("daily-lb-modal").classList.remove("visible");
     });
 
     // Feedback modal
@@ -558,6 +575,7 @@ export class UI {
       this.mpModalNickname.value = nick || "Igralec";
     }
     if (this.mpModalPassword) this.mpModalPassword.value = "";
+    if (this.mpModalCustomWord) this.mpModalCustomWord.value = "";
     this.mpCreateModal?.classList.add("visible");
     this._syncNicknameToMP();
     setTimeout(() => this.mpModalNickname?.select(), 50);
@@ -568,11 +586,12 @@ export class UI {
   }
 
   async confirmCreateRoom() {
-    const nickname = (this.mpModalNickname?.value || "").trim() || "Igralec";
-    const password = (this.mpModalPassword?.value || "").trim();
+    const nickname   = (this.mpModalNickname?.value || "").trim() || "Igralec";
+    const password   = (this.mpModalPassword?.value || "").trim();
+    const customWord = (this.mpModalCustomWord?.value || "").trim().toUpperCase() || null;
     window.localStorage.setItem("besedko-nickname", nickname);
     this.closeCreateModal();
-    await this._doCreateRoom(nickname, password);
+    await this._doCreateRoom(nickname, password, customWord);
   }
 
   // --- Join modal ---
@@ -632,7 +651,7 @@ export class UI {
 
   // --- Internal room operations ---
 
-  async _doCreateRoom(nickname, password = "") {
+  async _doCreateRoom(nickname, password = "", customWord = null) {
     if (!this.game) return;
     if (!this.game.multiplayer) {
       this.game.multiplayer = new Multiplayer({
@@ -647,11 +666,14 @@ export class UI {
     const wordLength = gameMode === "random"
       ? [4, 5, 6][Math.floor(Math.random() * 3)]
       : (this.selectedWordLength || 5);
+
     let answer = null;
-    if (this.game.dictionary) {
-      answer = this.game.dictionary.getRandomByTopic(topic, wordLength);
+    if (customWord && customWord.length >= 4 && customWord.length <= 6) {
+      answer = customWord;
+    } else {
+      if (this.game.dictionary) answer = this.game.dictionary.getRandomByTopic(topic, wordLength);
+      if (!answer) answer = this.game.dictionary?.getRandomAnswer() || this.game.answer;
     }
-    if (!answer) answer = this.game.dictionary?.getRandomAnswer() || this.game.answer;
 
     this.game.topic = topic;
     this.game.rows = rows;
@@ -1496,6 +1518,7 @@ export class UI {
 
   /** Call this when auth state changes. user = Firebase user object or null. */
   setAuthUser(user) {
+    this._currentUser = user || null;
     if (user) {
       // Logged in: show chip, hide login button
       this.authBtn && (this.authBtn.hidden = true);
@@ -1752,6 +1775,81 @@ export class UI {
     } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = "Pošlji";
+    }
+  }
+
+  // --- Daily leaderboard ---
+
+  _dailyDateKey() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  }
+
+  _dailyUserId() {
+    if (this._currentUser?.uid) return this._currentUser.uid;
+    let anonId = localStorage.getItem("besedko-anon-id");
+    if (!anonId) { anonId = Math.random().toString(36).slice(2, 10); localStorage.setItem("besedko-anon-id", anonId); }
+    return "anon-" + anonId;
+  }
+
+  _dailyNickname() {
+    if (this._currentUser?.displayName) return this._currentUser.displayName;
+    if (this._currentUser?.email) return this._currentUser.email.split("@")[0];
+    return localStorage.getItem("besedko-last-nickname") || "Gost";
+  }
+
+  async submitDailyResult({ guessCount, elapsedMs, won }) {
+    if (!won) return;
+    const date  = this._dailyDateKey();
+    const uid   = this._dailyUserId();
+    const entry = { guessCount, elapsedMs, nickname: this._dailyNickname(), at: Date.now() };
+    try {
+      await fetch(`${config.firebaseUrl}/daily/${date}/${uid}.json`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(entry),
+      });
+    } catch (e) { /* silent */ }
+  }
+
+  async showDailyLeaderboard() {
+    const modal = document.getElementById("daily-lb-modal");
+    if (!modal) return;
+    modal.classList.add("visible");
+    const tbody = document.getElementById("daily-lb-tbody");
+    const loader = document.getElementById("daily-lb-loader");
+    const myUid  = this._dailyUserId();
+    if (tbody) tbody.innerHTML = "";
+    if (loader) loader.hidden = false;
+
+    try {
+      const date = this._dailyDateKey();
+      const res  = await fetch(`${config.firebaseUrl}/daily/${date}.json`);
+      const data = res.ok ? (await res.json() || {}) : {};
+      if (loader) loader.hidden = true;
+
+      const entries = Object.entries(data)
+        .map(([uid, e]) => ({ uid, ...e }))
+        .filter(e => e.guessCount)
+        .sort((a, b) => a.guessCount - b.guessCount || a.elapsedMs - b.elapsedMs);
+
+      if (!entries.length) {
+        if (tbody) tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:20px">Še ni rezultatov za danes.</td></tr>`;
+        return;
+      }
+      if (tbody) tbody.innerHTML = entries.map((e, i) => {
+        const isMe = e.uid === myUid;
+        const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i+1}.`;
+        const elapsed = e.elapsedMs ? _fmtMs(e.elapsedMs) : "—";
+        return `<tr${isMe ? ' class="daily-lb-me"' : ""}>
+          <td class="daily-lb-rank">${medal}</td>
+          <td class="daily-lb-name">${e.nickname || "Gost"}${isMe ? " 👈" : ""}</td>
+          <td class="daily-lb-score">${e.guessCount} ugib. · ${elapsed}</td>
+        </tr>`;
+      }).join("");
+    } catch (e) {
+      if (loader) loader.hidden = true;
+      if (tbody) tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-muted)">Napaka pri nalaganju.</td></tr>`;
     }
   }
 

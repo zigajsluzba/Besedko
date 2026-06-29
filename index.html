@@ -20,6 +20,7 @@
         <div id="stats-summary" class="stats-summary" aria-live="polite">0/0</div>
         <div id="round-summary" class="round-summary" aria-live="polite">1/1</div>
         <button class="icon-button" id="stats-button" aria-label="Statistika" title="Statistika">📊</button>
+        <button class="icon-button" id="daily-lb-btn" aria-label="Lestvica dnevne besede" title="Lestvica dnevne besede">🏆</button>
         <button class="icon-button" id="feedback-btn" aria-label="Povratna informacija" title="Prijavi napako / predlagaj besedo">💬</button>
         <button class="icon-button" id="sounds-toggle-header" aria-label="Zvoki" title="Zvoki vkl/izkl">🔊</button>
         <!-- Auth: shows login button when logged out, user chip when logged in -->
@@ -297,6 +298,10 @@
               <button type="button" id="mp-modal-clear-password" class="secondary-button mp-gen-btn" title="Počisti geslo">✕</button>
             </div>
           </div>
+          <div class="mp-modal-field">
+            <label class="mp-label" for="mp-modal-custom-word">Beseda za igro <span class="mp-optional">(neobvezno — pusti prazno za naključno)</span></label>
+            <input type="text" id="mp-modal-custom-word" class="mp-text-input mp-custom-word-input" placeholder="npr. KMETIJA" maxlength="10" autocomplete="off" />
+          </div>
           <button id="mp-modal-create-btn" class="secondary-button mp-modal-confirm-btn" type="button">Ustvari sobo →</button>
         </div>
       </div>
@@ -432,6 +437,23 @@
       </div>
     </div>
 
+    <!-- Daily leaderboard modal -->
+    <div id="daily-lb-modal" class="stats-modal" role="dialog" aria-modal="true" aria-labelledby="daily-lb-title">
+      <div class="stats-panel mp-modal-panel">
+        <header class="stats-header">
+          <h2 id="daily-lb-title">🏆 Lestvica danes</h2>
+          <button id="daily-lb-close" class="close-button" type="button" aria-label="Zapri">×</button>
+        </header>
+        <div class="mp-modal-body">
+          <p id="daily-lb-date" class="daily-lb-date"></p>
+          <div id="daily-lb-loader" class="daily-lb-loader" hidden>Nalagam…</div>
+          <table class="daily-lb-table">
+            <tbody id="daily-lb-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- Feedback modal -->
     <div id="feedback-modal" class="stats-modal" role="dialog" aria-modal="true" aria-labelledby="feedback-modal-title">
       <div class="stats-panel mp-modal-panel feedback-panel">
@@ -461,6 +483,6 @@
       </div>
     </div>
 
-    <script type="module" src="js/app.js?v=20260628-26"></script>
+    <script type="module" src="js/app.js?v=20260628-27"></script>
   </body>
 </html>

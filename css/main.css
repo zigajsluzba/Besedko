@@ -1909,6 +1909,24 @@ main.mp-mode:not(.mp-active) .game-live-stats { display: none; }
 .end-actions { display: flex; gap: 8px; margin-top: 20px; }
 .end-actions .secondary-button { flex: 1; }
 
+/* ─── Daily leaderboard ──────────────────── */
+.daily-lb-date { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px; text-align: center; }
+.daily-lb-loader { text-align: center; color: var(--text-muted); padding: 20px; font-size: 0.88rem; }
+.daily-lb-table { width: 100%; border-collapse: collapse; }
+.daily-lb-table tr { border-bottom: 1px solid var(--border); }
+.daily-lb-table tr:last-child { border-bottom: none; }
+.daily-lb-table td { padding: 9px 6px; font-size: 0.88rem; }
+.daily-lb-rank { font-size: 1.1rem; width: 36px; text-align: center; }
+.daily-lb-name { font-weight: 600; }
+.daily-lb-score { color: var(--text-muted); text-align: right; white-space: nowrap; }
+.daily-lb-me { background: rgba(106,170,100,0.08); }
+.daily-lb-me .daily-lb-name { color: var(--correct); }
+
+/* ─── MP custom word input ────────────────── */
+.mp-custom-word-input {
+  letter-spacing: 0.1em; font-weight: 700; text-transform: uppercase;
+}
+
 /* ─── Feedback modal ──────────────────────── */
 .feedback-panel { width: min(420px, 92vw); }
 .feedback-type-row {

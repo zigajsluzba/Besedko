@@ -169,7 +169,9 @@ export class Game {
       this.gameOver = true;
       if (this.mode === "multiplayer" && this.multiplayer) {
         this.multiplayer.sendPlayerFinished(true, row + 1, this.bestGreenCount);
-        // showMpRematch is now called from _checkBothFinished in multiplayer.js
+      }
+      if (this.isDaily) {
+        this.ui?.submitDailyResult({ guessCount: row + 1, elapsedMs: Date.now() - this.gameStartTime, won: true });
       }
       this.ui?._animateWinRow(row);
       this.ui?._launchConfetti();
