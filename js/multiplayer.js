@@ -198,7 +198,8 @@ export class Multiplayer {
     this._gameStarting = true;
     // Duel: go to word-entry phase instead of starting immediately
     if (this.game.gameMode === "duel") {
-      await this._fbPatch(`rooms/${this.roomId}`, { status: "duel_words" });
+      const cfg = this.game.getGameConfig();
+      await this._fbPatch(`rooms/${this.roomId}`, { status: "duel_words", game_config: cfg });
       this._duelWordEntryShown = true;
       this.ui?.showDuelWordEntry(w => this._submitDuelWord(w));
       return;
@@ -451,11 +452,17 @@ export class Multiplayer {
     }
 
     // ── Duel: word entry phase ──
-    if (this.game.gameMode === "duel" && d.status === "duel_words" && !this._duelWordEntryShown) {
+    const isDuelMode = this.game.gameMode === "duel" || d.game_config?.gameMode === "duel";
+    if (isDuelMode && d.status === "duel_words" && !this._duelWordEntryShown) {
+      // Guest: adopt gameMode from game_config so subsequent checks work
+      if (d.game_config?.gameMode === "duel" && this.game.gameMode !== "duel") {
+        this.game.gameMode = "duel";
+        this.ui?.setGameMode("duel");
+      }
       this._duelWordEntryShown = true;
       this.ui?.showDuelWordEntry(w => this._submitDuelWord(w));
     }
-    if (this.isHost && this.game.gameMode === "duel" && d.status === "duel_words" && d.duelWords) {
+    if (this.isHost && isDuelMode && d.status === "duel_words" && d.duelWords) {
       const sids = Object.keys(d.players || {});
       if (sids.length >= 2 && sids.every(sid => d.duelWords[sid]) && !this._duelStarting) {
         this._duelStarting = true;
