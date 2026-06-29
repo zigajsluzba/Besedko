@@ -32,6 +32,8 @@ export class Game {
     this.currentRow = 0;
     this.currentCol = 0;
     this.gameOver = false;
+    this._persistedWon = null;
+    this._persistedGuessCount = 0;
     this.roundGuesses = [];
     this.hintUsed = false;
     this.boardStates = [];
@@ -167,12 +169,15 @@ export class Game {
       this.ui?._stopLiveStats();
       this._stopReveal();
       this.gameOver = true;
+      this._persistedWon = true;
+      this._persistedGuessCount = row + 1;
       if (this.mode === "multiplayer" && this.multiplayer) {
         this.multiplayer.sendPlayerFinished(true, row + 1, this.bestGreenCount);
       }
       if (this.isDaily) {
         this.ui?.submitDailyResult({ guessCount: row + 1, elapsedMs: Date.now() - this.gameStartTime, won: true });
       }
+      if (this.mode === "single") this.ui?._recordDailyPlay();
       this.ui?._animateWinRow(row);
       this.ui?._launchConfetti();
       setTimeout(() => {
@@ -216,10 +221,12 @@ export class Game {
       this.ui?._stopLiveStats();
       this._stopReveal();
       this.gameOver = true;
+      this._persistedWon = false;
       if (this.mode === "multiplayer" && this.multiplayer) {
         this.multiplayer.sendPlayerFinished(false, this.rows, this.bestGreenCount);
         // showMpRematch is now called from _checkBothFinished in multiplayer.js
       }
+      if (this.mode === "single") this.ui?._recordDailyPlay();
       this.ui?._animateLoseBoard();
       setTimeout(() => {
         this.ui?.showEndScreen({ won: false, word: this.answer, elapsed: this.getElapsed(), mpWaiting: this.mode === "multiplayer" });
@@ -536,6 +543,8 @@ export class Game {
       currentRow: this.currentRow,
       currentCol: this.currentCol,
       gameOver: this.gameOver,
+      won: this._persistedWon,
+      guessCount: this._persistedGuessCount,
       hintUsed: this.hintUsed,
       roundGuesses: this.roundGuesses,
       boardState: this.board?.getSnapshot() || [],
@@ -562,6 +571,8 @@ export class Game {
     this.currentRow = Number.isInteger(state.currentRow) ? state.currentRow : this.currentRow;
     this.currentCol = Number.isInteger(state.currentCol) ? state.currentCol : this.currentCol;
     this.gameOver = Boolean(state.gameOver);
+    this._persistedWon = state.won ?? null;
+    this._persistedGuessCount = state.guessCount || 0;
     this.hintUsed = Boolean(state.hintUsed);
     this.roundGuesses = this.normalizeAnswers(state.roundGuesses || []);
     const newCols = this.answer.length || 5;

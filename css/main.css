@@ -1970,3 +1970,25 @@ main.mp-mode:not(.mp-active) .game-live-stats { display: none; }
   border: 1px solid var(--absent); border-radius: 10px;
   color: var(--absent); font-size: 0.82rem; margin-bottom: 10px;
 }
+
+/* ─── Premium gating ──────────────────────── */
+.game-mode-btn.mode-locked,
+.mode-button.mode-locked {
+  opacity: 0.45; cursor: default;
+}
+.mode-lock-icon { pointer-events: none; font-size: 0.75em; }
+
+.premium-gate-overlay {
+  position: absolute; inset: 0; z-index: 60;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(var(--bg-rgb, 255,255,255), 0.88);
+  backdrop-filter: blur(4px);
+  border-radius: var(--board-radius, 8px);
+}
+.premium-gate-card {
+  text-align: center; padding: 28px 24px; max-width: 320px;
+}
+.premium-gate-icon { font-size: 2.8rem; margin-bottom: 10px; }
+.premium-gate-card h2 { margin: 0 0 10px; font-size: 1.15rem; }
+.premium-gate-card p { font-size: 0.88rem; color: var(--text-muted); margin: 6px 0; }
+.premium-gate-card .secondary-button { margin-top: 16px; }

@@ -322,6 +322,7 @@
               <th>Best niz</th>
               <th>Najljubši način</th>
               <th>Skupaj (vse)</th>
+              <th>Premium</th>
             </tr>
           </thead>
           <tbody id="users-tbody"></tbody>
@@ -771,7 +772,7 @@ function renderUsers() {
     const bestMode = s.byMode
       ? Object.entries(s.byMode).sort((a,b)=>b[1].played-a[1].played)[0]?.[0]
       : null;
-    return { uid, pl, wi, wr, streak: s.streak||0, best: s.bestStreak||0, bestMode, totalAll: pl };
+    return { uid, pl, wi, wr, streak: s.streak||0, best: s.bestStreak||0, bestMode, totalAll: pl, premium: !!u?.premium };
   }).sort((a,b) => b.pl - a.pl);
 
   $("users-tbody").innerHTML = rows.map(r =>
@@ -784,8 +785,32 @@ function renderUsers() {
       <td>${r.best}</td>
       <td style="color:var(--muted)">${r.bestMode ? modeLabel(r.bestMode) : "—"}</td>
       <td style="color:var(--muted)">${r.totalAll}</td>
+      <td>
+        <button onclick="togglePremium('${r.uid}', ${r.premium})"
+          style="padding:3px 10px;border-radius:6px;font-size:0.78rem;cursor:pointer;
+                 background:${r.premium ? 'rgba(106,170,100,0.18)' : 'rgba(130,130,130,0.12)'};
+                 border:1px solid ${r.premium ? 'var(--correct)' : 'var(--border)'};
+                 color:${r.premium ? 'var(--correct)' : 'var(--text)'}">
+          ${r.premium ? "⭐ Premium" : "Brez"}
+        </button>
+      </td>
     </tr>`
   ).join("");
+}
+
+async function togglePremium(uid, current) {
+  const newVal = !current;
+  try {
+    await fetch(`${FIREBASE_URL}/users/${uid}/premium.json`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newVal),
+    });
+    if (allUsers[uid]) allUsers[uid].premium = newVal;
+    renderUsers();
+  } catch (e) {
+    alert("Napaka pri shranjevanju premium statusa: " + e.message);
+  }
 }
 
 // ── Export CSV ────────────────────────────────────────

@@ -1,10 +1,10 @@
-﻿import { Game } from "./game.js?v=20260628-27";
-import { Dictionary } from "./dictionary.js?v=20260628-27";
-import { Storage } from "./storage.js?v=20260628-27";
-import { UI } from "./ui.js?v=20260628-27";
-import { Multiplayer } from "./multiplayer.js?v=20260628-27";
-import { config } from "./config.js?v=20260628-27";
-import { RiddleGame } from "./riddleGame.js?v=20260628-27";
+﻿import { Game } from "./game.js?v=20260629-01";
+import { Dictionary } from "./dictionary.js?v=20260629-01";
+import { Storage } from "./storage.js?v=20260629-01";
+import { UI } from "./ui.js?v=20260629-01";
+import { Multiplayer } from "./multiplayer.js?v=20260629-01";
+import { config } from "./config.js?v=20260629-01";
+import { RiddleGame } from "./riddleGame.js?v=20260629-01";
 import {
   onAuthChange,
   signInWithGoogle,
@@ -12,7 +12,7 @@ import {
   registerWithEmail,
   logout,
   friendlyAuthError,
-} from "./auth.js?v=20260628-27";
+} from "./auth.js?v=20260629-01";
 
 window.__besedkoInitStatus = "pending";
 window.__besedkoInitError = null;
@@ -67,7 +67,7 @@ async function init() {
 
     // Load riddles and wire riddle game
     try {
-      const riddleResp = await fetch("words/riddles.json?v=20260628-27");
+      const riddleResp = await fetch("words/riddles.json?v=20260629-01");
       if (riddleResp.ok) {
         const riddles = await riddleResp.json();
         const riddleGame = new RiddleGame(riddles);
@@ -79,7 +79,8 @@ async function init() {
 
     let initialAnswer;
     if (savedGameMode === "random") {
-      const len = [4, 5, 6][Math.floor(Math.random() * 3)];
+      const allLengths = [4, 5, 6, 7].filter(l => dict.answers?.some(w => w.length === l));
+      const len = allLengths[Math.floor(Math.random() * allLengths.length)] || 5;
       initialAnswer = dict.getRandomByTopic("mešano", len) || dict.getRandomAnswer();
     } else {
       initialAnswer = dict.getDailyAnswer();
@@ -118,11 +119,17 @@ async function init() {
 
         if (user) {
           const merged = await syncStats(user, storage, config.firebaseUrl);
-          if (merged) {
-            game.updateHeaderStats();
-          }
-          // Push stats periodically while session is active
+          if (merged) game.updateHeaderStats();
           syncTimer = setInterval(() => pushStats(user, storage, config.firebaseUrl), 60_000);
+
+          // Fetch premium status
+          try {
+            const premRes = await fetch(`${config.firebaseUrl}/users/${user.uid}/premium.json`);
+            const isPremium = premRes.ok ? (await premRes.json()) === true : false;
+            ui.setPremiumStatus(isPremium);
+          } catch (e) { ui.setPremiumStatus(false); }
+        } else {
+          ui.setPremiumStatus(false);
         }
       });
 

@@ -14,6 +14,7 @@ export class UI {
     this.selectedWordLength = 5;
     this.selectedRows = 6;
     this.selectedTopic = "mešano";
+    this._isPremium = false;
 
     // Core UI elements
     this.messageElement = document.getElementById("message");
@@ -199,6 +200,19 @@ export class UI {
     this.updateDailyMode();
     this._startLiveStats();
     this.populateTopics();
+    this._updateDailyGate();
+
+    // If game was already over when restoring state, show end screen after init settles
+    if (game?.gameOver && game.mode === "single" && game._persistedWon !== null) {
+      setTimeout(() => {
+        this.showEndScreen({
+          won: game._persistedWon,
+          guessCount: game._persistedGuessCount,
+          word: game._persistedWon ? undefined : game.answer,
+          elapsed: "—",
+        });
+      }, 300);
+    }
   }
 
   // --- Event registration ---
@@ -221,7 +235,13 @@ export class UI {
     this.statsNewGameButton?.addEventListener("click", startNewGame);
     this.hintButton?.addEventListener("click", () => this.game && this.game.requestHint());
     this.modeSingleButton?.addEventListener("click", () => this.setMode("single"));
-    this.modeMultiButton?.addEventListener("click", () => this.setMode("multiplayer"));
+    this.modeMultiButton?.addEventListener("click", () => {
+      if (!this._isPremium) {
+        this._showPremiumUpsell("Večigralski način je na voljo samo za Premium uporabnike.");
+        return;
+      }
+      this.setMode("multiplayer");
+    });
 
     // Pre-room buttons → open modals
     this.createRoomButton?.addEventListener("click", () => this.openCreateModal());
@@ -293,6 +313,7 @@ export class UI {
     // Auth
     this.authBtn?.addEventListener("click", () => this.openAuthModal());
     this.authUserChip?.addEventListener("click", () => this.openAuthModal());
+    document.getElementById("premium-gate-login-btn")?.addEventListener("click", () => this.openAuthModal());
     this.authClose?.addEventListener("click", () => this.closeAuthModal());
     this.authCloseProfile?.addEventListener("click", () => this.closeAuthModal());
     this.authModal?.addEventListener("click", (e) => {
@@ -318,12 +339,26 @@ export class UI {
     this.themeToggle?.addEventListener("click", () => this._toggleTheme());
     this._initTheme();
     this.gameModeButtons?.forEach((btn) => {
-      btn.addEventListener("click", () => this.game?.setGameMode(btn.dataset.mode));
+      btn.addEventListener("click", () => {
+        const m = btn.dataset.mode;
+        if (!this._isPremium && m !== "classic") {
+          this._showPremiumUpsell("Izbira načina igre je na voljo samo za Premium uporabnike.");
+          return;
+        }
+        this.game?.setGameMode(m);
+      });
     });
     this.mpGamemodeBtns?.forEach((btn) => {
       btn.addEventListener("click", () => {
         this.selectedGameMode = btn.dataset.mode;
         this.mpGamemodeBtns.forEach((b) => b.classList.toggle("active", b === btn));
+        const isRandom = btn.dataset.mode === "random";
+        this.mpLengthButtons?.forEach(lb => {
+          lb.disabled = isRandom;
+          lb.classList.toggle("mode-locked", isRandom);
+        });
+        const lenGroup = document.querySelector(".mp-setting-group:has(.mp-length-btn)");
+        if (lenGroup) lenGroup.style.opacity = isRandom ? "0.4" : "";
       });
     });
 
@@ -663,8 +698,11 @@ export class UI {
     const topic = this.selectedTopic || "mešano";
     const gameMode = this.selectedGameMode || "classic";
     const rows = this.selectedRows || 6;
-    const wordLength = gameMode === "random"
-      ? [4, 5, 6][Math.floor(Math.random() * 3)]
+    const availableLengths = gameMode === "random"
+      ? [4, 5, 6, 7].filter(l => this.game.dictionary?.answers?.some(w => w.length === l))
+      : null;
+    const wordLength = availableLengths
+      ? availableLengths[Math.floor(Math.random() * availableLengths.length)]
       : (this.selectedWordLength || 5);
 
     let answer = null;
@@ -1566,6 +1604,74 @@ export class UI {
     };
   }
 
+  // ─── Premium ───────────────────────────────────────────────────────────────
+
+  setPremiumStatus(isPremium) {
+    this._isPremium = !!isPremium;
+    this._applyPremiumGating();
+  }
+
+  _applyPremiumGating() {
+    const premium = this._isPremium;
+
+    // Game mode buttons: lock all non-classic
+    this.gameModeButtons?.forEach(btn => {
+      const locked = !premium && btn.dataset.mode !== "classic";
+      btn.classList.toggle("mode-locked", locked);
+      if (locked && !btn.querySelector(".mode-lock-icon")) {
+        const icon = document.createElement("span");
+        icon.className = "mode-lock-icon";
+        icon.textContent = " 🔒";
+        btn.appendChild(icon);
+      }
+      if (!locked) btn.querySelector(".mode-lock-icon")?.remove();
+    });
+
+    // Multiplayer mode button
+    const mpBtn = this.modeMultiButton;
+    if (mpBtn) {
+      mpBtn.classList.toggle("mode-locked", !premium);
+      const existing = mpBtn.querySelector(".mode-lock-icon");
+      if (!premium && !existing) {
+        const icon = document.createElement("span");
+        icon.className = "mode-lock-icon";
+        icon.textContent = " 🔒";
+        mpBtn.appendChild(icon);
+      }
+      if (premium) existing?.remove();
+    }
+
+    // Daily limit gate overlay
+    this._updateDailyGate();
+  }
+
+  _dailyLimitKey() {
+    return "besedko-daily-played";
+  }
+
+  _hasPlayedToday() {
+    return window.localStorage.getItem(this._dailyLimitKey()) === this._dailyDateKey();
+  }
+
+  _recordDailyPlay() {
+    if (!this._isPremium) {
+      window.localStorage.setItem(this._dailyLimitKey(), this._dailyDateKey());
+      this._updateDailyGate();
+    }
+  }
+
+  _updateDailyGate() {
+    const gate = document.getElementById("premium-gate-overlay");
+    if (!gate) return;
+    const show = !this._isPremium && this._hasPlayedToday() && this.game?.gameOver;
+    gate.hidden = !show;
+  }
+
+  _showPremiumUpsell(msg) {
+    const text = msg || "Ta funkcija je na voljo samo za Premium uporabnike.";
+    this.showMessage(`🔒 ${text} Prosimo, prijavi se — administrator ti lahko dodeli Premium dostop.`, "error", 5000);
+  }
+
   // --- Status display ---
 
   setMultiplayerStatus(text) {
@@ -1679,6 +1785,7 @@ export class UI {
 
   // opponentResults: map of sid → { won, guessCount, finishedAt, nickname }
   showMpResults(mine, opponentResults) {
+    this.setMultiplayerStatus("");
     const overlay = document.getElementById("end-overlay");
     if (overlay) overlay.classList.remove("end-overlay--waiting");
     const waitEl = document.getElementById("end-mp-wait");

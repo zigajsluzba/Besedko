@@ -190,6 +190,17 @@
       <div id="message" class="message" aria-live="assertive" role="alert"></div>
 
       <!-- End game overlay -->
+      <!-- Premium gate: shown when free user has used their daily game -->
+      <div id="premium-gate-overlay" class="premium-gate-overlay" hidden>
+        <div class="premium-gate-card">
+          <div class="premium-gate-icon">🔒</div>
+          <h2>Dnevna igra izkoriščena</h2>
+          <p>Brezplačni račun omogoča <strong>1 igro na dan</strong>.</p>
+          <p>Vrni se jutri ali zaprosi administratorja za <strong>Premium dostop</strong> in igraj neomejeno.</p>
+          <button class="secondary-button" id="premium-gate-login-btn" type="button">Prijava / Registracija</button>
+        </div>
+      </div>
+
       <div id="end-overlay" class="end-overlay" hidden>
         <div class="end-card">
           <div class="end-icon" id="end-icon">🎉</div>
@@ -483,6 +494,6 @@
       </div>
     </div>
 
-    <script type="module" src="js/app.js?v=20260628-27"></script>
+    <script type="module" src="js/app.js?v=20260629-01"></script>
   </body>
 </html>
