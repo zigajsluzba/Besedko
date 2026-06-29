@@ -1019,6 +1019,7 @@ export class UI {
     const cfg = {
       timeattack: { icon: "⏱", title: "Časovni napad", desc: "Imaš 3 minute da uganeš čim več besed." },
       reveal:     { icon: "👁", title: "Razkrivanje",   desc: "Vsake 5 sekund se razkrije ena črka. Ugani preden jih je preveč!" },
+      battleword: { icon: "⚓", title: "Ladjice + Besede", desc: "Ugani besedo IN potopi ladjo na radarju — oba cilja v 6 potezah!" },
     };
     const c = cfg[mode] || { icon: "▶", title: mode, desc: "" };
     const el = id => document.getElementById(id);
@@ -1317,6 +1318,7 @@ export class UI {
     riddle:     { desc: "Ugani besedo ali zvezo iz namigov — čim manj namigov, tem boljše!", toast: "Uganka 🎭 — ugani iz namigov!" },
     random:     { desc: "Naključna beseda — 4, 5 ali 6 črk. Tabela se prilagodi dolžini.", toast: "Naključni način 🎲 — nova dolžina vsako igro!" },
     reveal:     { desc: "Vsakih 5 sekund se razkrije ena črka. Ugani čim prej!", toast: "Razkrivanje 👁 — beseda se počasi razkriva!" },
+    battleword: { desc: "Ugani besedo IN potopi 3-celično ladjo na 6×6 radarju — v 6 potezah!", toast: "Ladjice ⚓ — ugani besedo + potopi ladjo!" },
   };
 
   static _modeLabels = {
@@ -1327,6 +1329,7 @@ export class UI {
     riddle:     "🎭 Uganka",
     random:     "🎲 Naključno",
     reveal:     "👁 Razkrivanje",
+    battleword: "⚓ Ladjice",
   };
 
   setGameMode(mode) {
@@ -1342,6 +1345,7 @@ export class UI {
     const isRiddle = mode === "riddle";
     const isTimeAttack = mode === "timeattack";
     const isReveal = mode === "reveal";
+    const isBattleword = mode === "battleword";
 
     // In MP lobby (game not yet started) only update labels — don't show game UI.
     const inMpLobby = this.game?.mode === "multiplayer" && !this.game?.multiplayer?.peerConnected;
@@ -1360,13 +1364,19 @@ export class UI {
     if (this.revealBarEl) this.revealBarEl.hidden = !isReveal;
     if (isReveal) this._updateRevealBar();
 
+    // Battleword: show/hide radar panel + toggle layout class
+    const bwPanel = document.getElementById("battleword-panel");
+    if (bwPanel) bwPanel.hidden = !isBattleword;
+    const gameArea = document.getElementById("game-area");
+    if (gameArea) gameArea.classList.toggle("battleword-mode", isBattleword);
+
     if (isRiddle && this.riddleGame) this.startRiddle();
     else if (!isRiddle) this._startLiveStats();
 
     // In singleplayer, show ready overlay for modes that need explicit start.
     const inMp = this.game?.mode === "multiplayer";
     this._hideReadyOverlay();
-    if (!inMp && (isTimeAttack || isReveal)) {
+    if (!inMp && (isTimeAttack || isReveal || isBattleword)) {
       this._showReadyOverlay(mode);
     } else if (!inMp) {
       // Other modes start immediately.
@@ -1606,6 +1616,82 @@ export class UI {
       email: (this.authEmailInput?.value || "").trim(),
       password: this.authPasswordInput?.value || "",
     };
+  }
+
+  // ─── Battleword ────────────────────────────────────────────────────────────
+
+  initBattlewordGrid(bw) {
+    const grid = document.getElementById("bw-grid");
+    if (!grid || !bw) return;
+    grid.innerHTML = "";
+    const COLS = ["A","B","C","D","E","F"];
+    // Header row: empty corner + column numbers 1-6
+    grid.appendChild(this._bwLabel(""));
+    for (let c = 0; c < bw.SIZE; c++) grid.appendChild(this._bwLabel(c + 1));
+    // Data rows
+    for (let r = 0; r < bw.SIZE; r++) {
+      grid.appendChild(this._bwLabel(COLS[r]));
+      for (let c = 0; c < bw.SIZE; c++) {
+        const cell = document.createElement("div");
+        cell.className = "bw-cell";
+        cell.dataset.r = r;
+        cell.dataset.c = c;
+        cell.addEventListener("click", () => {
+          if (bw.isShot(r, c)) return;
+          bw.select(r, c);
+          // Clear other pending highlights
+          grid.querySelectorAll(".bw-cell.pending").forEach(el => el.classList.remove("pending"));
+          cell.classList.add("pending");
+          const hint = document.getElementById("bw-hint");
+          if (hint) hint.textContent = `Cilj: ${COLS[r]}${c + 1} — pritisni Enter za strel`;
+        });
+        grid.appendChild(cell);
+      }
+    }
+    const status = document.getElementById("bw-ship-status");
+    if (status) status.textContent = `💣 0 / ${bw.SHIP_LEN}`;
+    const hint = document.getElementById("bw-hint");
+    if (hint) hint.textContent = "Izberi celico in strelaj";
+  }
+
+  _bwLabel(text) {
+    const el = document.createElement("div");
+    el.className = "bw-label";
+    el.textContent = text;
+    return el;
+  }
+
+  onBattlewordShot(shot, bw) {
+    const grid = document.getElementById("bw-grid");
+    if (!grid || !shot) return;
+    const COLS = ["A","B","C","D","E","F"];
+    const cell = grid.querySelector(`.bw-cell[data-r="${shot.r}"][data-c="${shot.c}"]`);
+    if (cell) {
+      cell.classList.remove("pending");
+      cell.classList.add("bw-shot", shot.result);
+      cell.textContent = shot.result === "hit" ? "💥" : shot.result === "near" ? "🟡" : "💧";
+    }
+    const hits = bw.hitsCount();
+    const status = document.getElementById("bw-ship-status");
+    if (status) status.textContent = `💣 ${hits} / ${bw.SHIP_LEN}`;
+    const hint = document.getElementById("bw-hint");
+    if (hint) {
+      const label = `${COLS[shot.r]}${shot.c + 1}`;
+      hint.textContent = shot.result === "hit"  ? `💥 Zadetek na ${label}!`
+                       : shot.result === "near" ? `🟡 Blizu pri ${label}!`
+                       : `💧 Zgrešeno pri ${label}`;
+    }
+  }
+
+  revealBattlewordShip(bw) {
+    const grid = document.getElementById("bw-grid");
+    if (!grid || !bw) return;
+    bw.ship.forEach(({ r, c }) => {
+      if (!bw.isShot(r, c)) {
+        const cell = grid.querySelector(`.bw-cell[data-r="${r}"][data-c="${c}"]`);
+        if (cell) { cell.classList.add("bw-shot", "revealed"); cell.textContent = "🚢"; }
+      }
+    });
   }
 
   // ─── Premium ───────────────────────────────────────────────────────────────

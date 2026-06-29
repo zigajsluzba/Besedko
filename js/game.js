@@ -3,6 +3,7 @@ import { Keyboard } from "./keyboard.js?v=20260627-03";
 import { WordleEngine } from "./wordleEngine.js?v=20260627-03";
 import { Animations } from "./animations.js?v=20260627-03";
 import { sounds } from "./sounds.js?v=20260627-12";
+import { BattleWord } from "./battleword.js?v=20260629-09";
 
 export class Game {
   /**
@@ -43,6 +44,8 @@ export class Game {
     this.timeAttackScore = 0;
     this.multiplayer = null;
     this.opponentBoards = {};
+    this.battleword = null;
+    this._bwWordDone = false;
     this.persistKey = "game-state";
     this.gameStartTime = Date.now();
     this.currentRiddle = null;
@@ -80,6 +83,55 @@ export class Game {
 
   submitGuess() {
     if (this.gameOver) return;
+
+    // BATTLEWORD: word already guessed, remaining turns fire radar only
+    if (this.gameMode === "battleword" && this.battleword && this._bwWordDone) {
+      if (!this.battleword.isSunk()) {
+        if (!this.battleword.hasPending()) {
+          this.ui?.showMessage("📡 Izberi celico na radarju!", "error", 2000);
+          return;
+        }
+        const bwShot = this.battleword.fire();
+        if (bwShot) this.ui?.onBattlewordShot(bwShot, this.battleword);
+        if (this.battleword.isSunk()) {
+          this.storage?.recordGame({ mode: "battleword", wordLength: this.cols, won: true, guessCount: this.currentRow + 1 });
+          this.updateHeaderStats();
+          sounds.win();
+          this.ui?.showMessage(`🚢 Ladjica potopljena! Zmaga v ${this.currentRow + 1} potezah! ⚓`, "info", 3500);
+          this.ui?._stopLiveStats();
+          this.gameOver = true;
+          this._persistedWon = true;
+          this._persistedGuessCount = this.currentRow + 1;
+          this.ui?._launchConfetti();
+          if (this.mode === "single") this.ui?._recordDailyPlay();
+          setTimeout(() => {
+            this.ui?.showEndScreen({ won: true, guessCount: this.currentRow + 1, elapsed: this.getElapsed() });
+          }, 1800);
+          this.persistState();
+          return;
+        }
+      }
+      this.currentRow++;
+      if (this.currentRow >= this.rows) {
+        this.storage?.recordGame({ mode: "battleword", wordLength: this.cols, won: false, guessCount: this.rows });
+        this.updateHeaderStats();
+        sounds.lose();
+        this.ui?.showMessage(`Igra končana. Ladjica ni bila potopljena! 🚢`, "error", 4200);
+        this.ui?._stopLiveStats();
+        this.gameOver = true;
+        this._persistedWon = false;
+        this.ui?.revealBattlewordShip(this.battleword);
+        this.ui?._animateLoseBoard();
+        setTimeout(() => {
+          this.ui?.showEndScreen({ won: false, elapsed: this.getElapsed() });
+        }, 1200);
+        this.persistState();
+        return;
+      }
+      this.persistState();
+      return;
+    }
+
     if (this.currentCol !== this.cols) {
       this.board.shakeRow(this.currentRow);
       this.ui && this.ui.showMessage(`Vnesite ${this.cols} črk.`, "error", 1800);
@@ -98,6 +150,13 @@ export class Game {
       if (violation) {
         this.board.shakeRow(this.currentRow);
         this.ui?.showMessage(violation, "error", 2200);
+        return;
+      }
+    }
+    // BATTLEWORD: require a radar cell to be selected before submitting
+    if (this.gameMode === "battleword" && this.battleword && !this.battleword.isSunk()) {
+      if (!this.battleword.hasPending()) {
+        this.ui?.showMessage("📡 Najprej izberi celico na radarju!", "error", 2000);
         return;
       }
     }
@@ -137,6 +196,12 @@ export class Game {
 
     const isWin = states.every((s) => s === "correct");
 
+    // BATTLEWORD: fire pending radar shot simultaneously with word evaluation
+    if (this.gameMode === "battleword" && this.battleword && !this.battleword.isSunk()) {
+      const bwShot = this.battleword.fire();
+      if (bwShot) this.ui?.onBattlewordShot(bwShot, this.battleword);
+    }
+
     // Time attack: auto-next word on win, don't end game
     if (isWin && this.gameMode === "timeattack") {
       this.timeAttackScore++;
@@ -153,6 +218,16 @@ export class Game {
     }
 
     if (isWin) {
+      // BATTLEWORD: word correct but ship not yet sunk → keep playing (fire-only turns)
+      if (this.gameMode === "battleword" && this.battleword && !this.battleword.isSunk()) {
+        this._bwWordDone = true;
+        this.ui?.showMessage("✅ Beseda uganjena! Zdaj potopi ladjo! 🚢💣", "info", 3500);
+        this.currentRow++;
+        this.currentCol = 0;
+        this.persistState();
+        return;
+      }
+
       this.storage?.recordGame({ mode: this.gameMode, wordLength: this.cols, won: true, guessCount: row + 1, isMultiplayer: this.mode === "multiplayer" });
       this.updateHeaderStats();
       if (this.roundIndex + 1 < this.answers.length) {
@@ -213,11 +288,19 @@ export class Game {
       }
       this.updateHeaderStats();
       sounds.lose();
-      this.ui && this.ui.showMessage(
-        `Igra končana. Beseda: ${this.answer}. ⏱ ${this.getElapsed()}`,
-        "error",
-        4200
-      );
+      // BATTLEWORD: reveal ship position + tailor loss message
+      if (this.gameMode === "battleword" && this.battleword) {
+        this.ui?.revealBattlewordShip(this.battleword);
+        const wordPart = this._bwWordDone ? "" : ` Beseda: ${this.answer}.`;
+        const shipPart = this.battleword.isSunk() ? "" : " Ladjica ni bila potopljena.";
+        this.ui?.showMessage(`Igra končana.${wordPart}${shipPart}`, "error", 4200);
+      } else {
+        this.ui && this.ui.showMessage(
+          `Igra končana. Beseda: ${this.answer}. ⏱ ${this.getElapsed()}`,
+          "error",
+          4200
+        );
+      }
       this.ui?._stopLiveStats();
       this._stopReveal();
       this.gameOver = true;
@@ -280,6 +363,11 @@ export class Game {
     this.gameOver = false;
     this._persistedWon = null;
     this._persistedGuessCount = 0;
+    this._bwWordDone = false;
+    if (this.gameMode === "battleword") {
+      this.battleword = new BattleWord();
+      this.ui?.initBattlewordGrid(this.battleword);
+    }
     this.roundGuesses = [];
     this.hintUsed = false;
     this.boardStates = [];
@@ -358,9 +446,11 @@ export class Game {
     this.hardConstraints = { greens: {}, yellows: new Set() };
     this.timeAttackScore = 0;
     this.rows = mode === "zen" ? 9 : 6;
+    this._bwWordDone = false;
+    this.battleword = null;
     localStorage.setItem("besedko-gamemode", mode);
     if (mode !== "riddle") {
-      const answer = (mode === "random" || mode === "reveal")
+      const answer = (mode === "random" || mode === "reveal" || mode === "battleword")
         ? this._randomLengthAnswer()
         : (this.dictionary?.getDailyAnswer() || this.dictionary?.getRandomAnswer() || this.answer);
       this.restart([answer]);

@@ -128,6 +128,7 @@
         <button class="game-mode-btn" data-mode="riddle" type="button">🎭 Uganka</button>
         <button class="game-mode-btn" data-mode="random" type="button">🎲 Naključno</button>
         <button class="game-mode-btn" data-mode="reveal" type="button">👁 Razkrivanje</button>
+        <button class="game-mode-btn" data-mode="battleword" type="button">⚓ Ladjice</button>
       </div>
       <p class="game-mode-desc" id="game-mode-desc"></p>
       <div id="reveal-bar" class="reveal-bar" hidden>
@@ -159,6 +160,16 @@
           <section id="board" class="board" tabindex="0" aria-label="Moja tabla"></section>
         </div>
         <!-- Opponent boards injected dynamically by ui.js -->
+      </div>
+
+      <!-- Battleword radar panel (only shown in battleword mode) -->
+      <div id="battleword-panel" class="battleword-panel" hidden>
+        <div class="bw-header">
+          <span class="bw-title">📡 Radar</span>
+          <span id="bw-ship-status" class="bw-ship-status">💣 0 / 3</span>
+        </div>
+        <div id="bw-grid" class="bw-grid"></div>
+        <p id="bw-hint" class="bw-hint">Izberi celico in strelaj</p>
       </div>
 
       </div><!-- /game-area -->
@@ -497,6 +508,6 @@
       </div>
     </div>
 
-    <script type="module" src="js/app.js?v=20260629-08"></script>
+    <script type="module" src="js/app.js?v=20260629-09"></script>
   </body>
 </html>
