@@ -3,7 +3,7 @@ import { Keyboard } from "./keyboard.js?v=20260627-03";
 import { WordleEngine } from "./wordleEngine.js?v=20260627-03";
 import { Animations } from "./animations.js?v=20260627-03";
 import { sounds } from "./sounds.js?v=20260627-12";
-import { BattleWord } from "./battleword.js?v=20260629-11";
+import { BattleWord } from "./battleword.js?v=20260629-12";
 
 export class Game {
   /**
@@ -562,6 +562,8 @@ export class Game {
   updateRound() {
     if (!this.ui || !this.answers.length) return;
     this.ui.updateRound(this.roundIndex + 1, this.answers.length);
+    const dbg = document.getElementById("debug-answer");
+    if (dbg) dbg.textContent = this.answer || "";
   }
 
   // --- Multiplayer ---
