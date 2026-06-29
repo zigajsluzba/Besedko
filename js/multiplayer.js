@@ -1,3 +1,21 @@
+const _FUNNY_NICKNAMES = [
+  "ZaspaniPolž", "HitriPolž", "JezniSlon", "VeseliKmet", "PonosniParadižnik",
+  "ZmedeniBober", "LačniVolk", "SkrivnostniMedved", "OgnjevitiJežek", "DivjaMuha",
+  "BujnaBuča", "TrdiSir", "ČudaškiOrel", "MehkiKamen", "ZmešanaGoba",
+  "TihaČrka", "GlasniHrček", "SpečaSova", "BesniKokoš", "VeseljačkiRak",
+  "LetiPingvin", "DebelijonaZajec", "MokraMačka", "SuhiRibar", "CvilečiMiš",
+  "KropljeniKmet", "ZacvičaniBobek", "MutastiDino", "ČiviziKrivec", "PrebujenaSirota",
+  "KolumnaOsla", "BumbarjinoVreče", "BesedniMajster", "VriskavaTočka", "BrezimniJunak",
+  "MahulaviBran", "NačičkaniVlak", "ŠepetečaLegenda", "ReševalecBesed", "KrompirjevBog",
+  "NočniŠepetač", "GrmečiMiž", "SanjskiPolž", "BesedniBogataš", "PrdečiVitezo",
+];
+
+export function randomNickname() {
+  const base = _FUNNY_NICKNAMES[Math.floor(Math.random() * _FUNNY_NICKNAMES.length)];
+  const num = Math.floor(Math.random() * 90) + 10;
+  return `${base}${num}`;
+}
+
 function _fmtElapsed(ms) {
   const s = Math.round(ms / 1000);
   if (s < 60) return `${s}s`;

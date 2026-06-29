@@ -1,4 +1,4 @@
-﻿import { Multiplayer } from "./multiplayer.js?v=20260627-09";
+﻿import { Multiplayer, randomNickname } from "./multiplayer.js?v=20260629-14";
 import { config } from "./config.js?v=20260627-09";
 import { sounds } from "./sounds.js?v=20260627-14";
 
@@ -621,7 +621,7 @@ export class UI {
   openCreateModal() {
     if (this.mpModalNickname && !this.mpModalNickname._userEdited) {
       const nick = this.storage?.getNickname() || window.localStorage.getItem("besedko-nickname") || "";
-      this.mpModalNickname.value = nick || "Igralec";
+      this.mpModalNickname.value = nick || this._getOrCreateNickname();
     }
     if (this.mpModalPassword) this.mpModalPassword.value = "";
     if (this.mpModalCustomWord) this.mpModalCustomWord.value = "";
@@ -635,7 +635,7 @@ export class UI {
   }
 
   async confirmCreateRoom() {
-    const nickname   = (this.mpModalNickname?.value || "").trim() || "Igralec";
+    const nickname   = (this.mpModalNickname?.value || "").trim() || this._getOrCreateNickname();
     const password   = (this.mpModalPassword?.value || "").trim();
     const customWord = (this.mpModalCustomWord?.value || "").trim().toUpperCase() || null;
     window.localStorage.setItem("besedko-nickname", nickname);
@@ -649,7 +649,7 @@ export class UI {
     const joinNick = document.getElementById("mp-join-nickname");
     if (joinNick && !joinNick._userEdited) {
       const nick = this.storage?.getNickname() || window.localStorage.getItem("besedko-nickname") || "";
-      joinNick.value = nick || "Igralec";
+      joinNick.value = nick || this._getOrCreateNickname();
     }
     if (this.mpJoinCode) this.mpJoinCode.value = "";
     if (this.mpJoinPassword) this.mpJoinPassword.value = "";
@@ -672,7 +672,7 @@ export class UI {
   }
 
   async confirmJoinRoom() {
-    const nickname = (this.mpJoinNickname?.value || "").trim() || "Igralec";
+    const nickname = (this.mpJoinNickname?.value || "").trim() || this._getOrCreateNickname();
     const code = (this.mpJoinCode?.value || "").trim().toUpperCase();
     if (!code) { this.mpJoinCode?.focus(); return; }
 
@@ -1254,13 +1254,24 @@ export class UI {
     if (this.headerAvatar) this.headerAvatar.textContent = emoji;
   }
 
+  _getOrCreateNickname() {
+    const key = "besedko-auto-nickname";
+    let saved = window.localStorage.getItem(key);
+    if (!saved) {
+      saved = randomNickname();
+      window.localStorage.setItem(key, saved);
+    }
+    return saved;
+  }
+
   _syncNicknameToMP() {
-    const nick = this.storage?.getNickname() || "";
+    const nick = this.storage?.getNickname() || window.localStorage.getItem("besedko-nickname") || "";
+    const fallback = this._getOrCreateNickname();
     if (this.mpModalNickname && !this.mpModalNickname._userEdited) {
-      this.mpModalNickname.value = nick;
+      this.mpModalNickname.value = nick || fallback;
     }
     const joinNick = document.getElementById("mp-join-nickname");
-    if (joinNick && !joinNick._userEdited) joinNick.value = nick;
+    if (joinNick && !joinNick._userEdited) joinNick.value = nick || fallback;
   }
 
   // --- Auth modal ---
