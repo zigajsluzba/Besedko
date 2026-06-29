@@ -1979,11 +1979,10 @@ main.mp-mode:not(.mp-active) .game-live-stats { display: none; }
 .mode-lock-icon { pointer-events: none; font-size: 0.75em; }
 
 .premium-gate-overlay {
-  position: absolute; inset: 0; z-index: 60;
+  position: fixed; inset: 0; z-index: 300;
   display: flex; align-items: center; justify-content: center;
-  background: rgba(var(--bg-rgb, 255,255,255), 0.88);
-  backdrop-filter: blur(4px);
-  border-radius: var(--board-radius, 8px);
+  background: rgba(var(--bg-rgb, 15,15,15), 0.92);
+  backdrop-filter: blur(6px);
 }
 .premium-gate-card {
   text-align: center; padding: 28px 24px; max-width: 320px;

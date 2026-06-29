@@ -225,6 +225,10 @@ export class UI {
     });
     const startNewGame = () => {
       if (!this.game) return;
+      if (!this._isPremium && this._hasPlayedToday()) {
+        this._updateDailyGate();
+        return;
+      }
       const nextAnswer = this.game.dictionary
         ? this.game.dictionary.getDailyAnswer()
         : this.game.answer;
@@ -440,6 +444,11 @@ export class UI {
       this.showStats();
     });
     document.getElementById("end-new-game-btn")?.addEventListener("click", () => {
+      if (!this._isPremium && this._hasPlayedToday()) {
+        this.hideEndScreen();
+        this._updateDailyGate();
+        return;
+      }
       this.hideEndScreen();
       this.game?.newGame?.() || location.reload();
     });
@@ -1663,7 +1672,8 @@ export class UI {
   _updateDailyGate() {
     const gate = document.getElementById("premium-gate-overlay");
     if (!gate) return;
-    const show = !this._isPremium && this._hasPlayedToday() && this.game?.gameOver;
+    // Show whenever user has played today and is not premium — regardless of current gameOver state
+    const show = !this._isPremium && this._hasPlayedToday();
     gate.hidden = !show;
   }
 
