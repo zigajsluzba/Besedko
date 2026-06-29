@@ -2011,8 +2011,8 @@ main.mp-mode:not(.mp-active) .game-live-stats { display: none; }
 
 /* ── Duel mode – word entry ───────────────────────────────── */
 .mp-duel-word-entry {
-  background: var(--bg-secondary, #1a1a1a);
-  border: 1px solid var(--border, #333);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 14px 16px;
   margin: 8px 0;
@@ -2028,8 +2028,8 @@ main.mp-mode:not(.mp-active) .game-live-stats { display: none; }
   text-align: center;
   padding: 6px 12px;
   border-radius: 8px;
-  background: var(--bg-secondary, #1a1a1a);
-  border: 1px solid var(--border, #333);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
   margin: 4px 0;
 }
 .mp-relay-turn-text { font-size: 0.88rem; font-weight: 600; }

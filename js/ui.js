@@ -1,4 +1,4 @@
-﻿import { Multiplayer, randomNickname } from "./multiplayer.js?v=20260629-14";
+﻿import { Multiplayer, randomNickname } from "./multiplayer.js?v=20260629-16";
 import { config } from "./config.js?v=20260627-09";
 import { sounds } from "./sounds.js?v=20260627-14";
 
@@ -1659,7 +1659,22 @@ export class UI {
     if (status) status.textContent = "Vnesi besedo, ki jo bo moral ugibati nasprotnik.";
     const btn = document.getElementById("mp-duel-confirm-btn");
     const input = document.getElementById("mp-duel-word-input");
-    if (input) { input.value = ""; input.disabled = false; input.focus(); }
+
+    // Build datalist from dictionary for autocomplete
+    const dlId = "duel-word-datalist";
+    let dl = document.getElementById(dlId);
+    if (!dl) {
+      dl = document.createElement("datalist");
+      dl.id = dlId;
+      const answers = this.game?.dictionary?.answers || [];
+      answers.forEach(w => {
+        const opt = document.createElement("option");
+        opt.value = w;
+        dl.appendChild(opt);
+      });
+      document.body.appendChild(dl);
+    }
+    if (input) { input.setAttribute("list", dlId); input.value = ""; input.disabled = false; input.focus(); }
     if (btn) {
       const newBtn = btn.cloneNode(true);
       btn.parentNode.replaceChild(newBtn, btn);
