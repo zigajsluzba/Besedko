@@ -1,10 +1,10 @@
-﻿import { Game } from "./game.js?v=20260629-01";
-import { Dictionary } from "./dictionary.js?v=20260629-01";
-import { Storage } from "./storage.js?v=20260629-01";
-import { UI } from "./ui.js?v=20260629-01";
-import { Multiplayer } from "./multiplayer.js?v=20260629-01";
-import { config } from "./config.js?v=20260629-01";
-import { RiddleGame } from "./riddleGame.js?v=20260629-01";
+﻿import { Game } from "./game.js?v=20260629-03";
+import { Dictionary } from "./dictionary.js?v=20260629-03";
+import { Storage } from "./storage.js?v=20260629-03";
+import { UI } from "./ui.js?v=20260629-03";
+import { Multiplayer } from "./multiplayer.js?v=20260629-03";
+import { config } from "./config.js?v=20260629-03";
+import { RiddleGame } from "./riddleGame.js?v=20260629-03";
 import {
   onAuthChange,
   signInWithGoogle,
@@ -12,7 +12,7 @@ import {
   registerWithEmail,
   logout,
   friendlyAuthError,
-} from "./auth.js?v=20260629-01";
+} from "./auth.js?v=20260629-03";
 
 window.__besedkoInitStatus = "pending";
 window.__besedkoInitError = null;
@@ -67,7 +67,7 @@ async function init() {
 
     // Load riddles and wire riddle game
     try {
-      const riddleResp = await fetch("words/riddles.json?v=20260629-01");
+      const riddleResp = await fetch("words/riddles.json?v=20260629-03");
       if (riddleResp.ok) {
         const riddles = await riddleResp.json();
         const riddleGame = new RiddleGame(riddles);
@@ -128,6 +128,21 @@ async function init() {
             const isPremium = premRes.ok ? (await premRes.json()) === true : false;
             ui.setPremiumStatus(isPremium);
           } catch (e) { ui.setPremiumStatus(false); }
+
+          // Save display name / nickname to Firebase for admin visibility
+          try {
+            const nick = user.displayName
+              || window.localStorage.getItem("besedko-nickname")
+              || user.email?.split("@")[0]
+              || null;
+            if (nick) {
+              fetch(`${config.firebaseUrl}/users/${user.uid}/nickname.json`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(nick),
+              });
+            }
+          } catch (e) { /* silent */ }
         } else {
           ui.setPremiumStatus(false);
         }

@@ -315,13 +315,13 @@
           <thead>
             <tr>
               <th>UID</th>
+              <th>Nick / Ime</th>
               <th>Odigrane</th>
               <th>Zmage</th>
               <th>Win rate</th>
               <th>Niz</th>
               <th>Best niz</th>
               <th>Najljubši način</th>
-              <th>Skupaj (vse)</th>
               <th>Premium</th>
             </tr>
           </thead>
@@ -772,19 +772,19 @@ function renderUsers() {
     const bestMode = s.byMode
       ? Object.entries(s.byMode).sort((a,b)=>b[1].played-a[1].played)[0]?.[0]
       : null;
-    return { uid, pl, wi, wr, streak: s.streak||0, best: s.bestStreak||0, bestMode, totalAll: pl, premium: !!u?.premium };
+    return { uid, nick: u?.nickname || null, pl, wi, wr, streak: s.streak||0, best: s.bestStreak||0, bestMode, totalAll: pl, premium: !!u?.premium };
   }).sort((a,b) => b.pl - a.pl);
 
   $("users-tbody").innerHTML = rows.map(r =>
     `<tr>
       <td class="mono" title="${r.uid}" style="color:var(--muted)">${r.uid.slice(0,8)}…</td>
+      <td style="font-weight:${r.nick ? '600' : '400'};color:${r.nick ? 'var(--text)' : 'var(--muted)'}">${r.nick ? escHtml(r.nick) : '—'}</td>
       <td>${r.pl}</td>
       <td>${r.wi}</td>
       <td>${r.wr}</td>
       <td>${r.streak}</td>
       <td>${r.best}</td>
       <td style="color:var(--muted)">${r.bestMode ? modeLabel(r.bestMode) : "—"}</td>
-      <td style="color:var(--muted)">${r.totalAll}</td>
       <td>
         <button onclick="togglePremium('${r.uid}', ${r.premium})"
           style="padding:3px 10px;border-radius:6px;font-size:0.78rem;cursor:pointer;
